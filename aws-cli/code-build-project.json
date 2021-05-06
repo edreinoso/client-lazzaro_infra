@@ -1,0 +1,28 @@
+{
+    "name": "frontend-code-build-service",
+    "artifacts": {
+        "type": "S3",
+        "location": "lazzaro-ongs-template-artifacts"
+    },
+    "environment": {
+        "computeType": "BUILD_GENERAL1_SMALL",
+        "image": "aws/codebuild/amazonlinux2-x86_64-standard:2.0",
+        "privilegedMode": true,
+        "type": "LINUX_CONTAINER"
+    },
+    "serviceRole": "arn:aws:iam::648410456371:role/frontend-code-build-service-role",
+    "source": {
+        "type": "S3",
+        "location": "lazzaro-ongs-template-bucket/"
+    },
+    "tags": [
+        {
+            "key": "Name",
+            "value": "lazzaro-frontend-service-build"
+        },
+        {
+            "key": "Date",
+            "value": "April_29th_2021"
+        }
+    ]
+}

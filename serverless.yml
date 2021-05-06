@@ -1,0 +1,56 @@
+# serverless.yml
+
+service: frontend-ecs-services
+
+plugins:
+  - serverless-python-requirements
+  - serverless-wsgi
+
+custom:
+  wsgi:
+    app: client.app # app.py and the app variable inside
+    packRequirements: false
+  pythonRequirements:
+    dockerizePip: non-linux
+
+provider:
+  name: aws
+  runtime: python3.6
+  stage: dev
+  region: eu-central-1
+
+functions:
+  ## Creation process
+  client:
+    handler: wsgi_handler.handler
+    role: arn:aws:iam::648410456371:role/frontend-client-gateway-role
+    events:
+      - http:
+          path: "/createclient"
+          method: post
+      - http:
+          path: "/removeclient"
+          method: delete
+  
+  createservice:
+    handler: artifacts.handler
+    role: arn:aws:iam::648410456371:role/frontend-create-lambda-service-role
+    timeout: 60
+    events:
+      - s3:
+          bucket: lazzaro-ongs-template-artifacts
+          event: s3:ObjectCreated:Put
+  
+  ## Deletion process
+  removeservice:
+    handler: stream.handler
+    role: arn:aws:iam::648410456371:role/frontend-delete-lambda-service-role
+    timeout: 45
+    events:
+      - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-05T13:45:56.713
+
+resources:
+  - ${file(resources/codebuild-role.yml)}
+  - ${file(resources/client-gateway-permission.yml)}
+  - ${file(resources/create-permission.yml)}
+  - ${file(resources/delete-permission.yml)}

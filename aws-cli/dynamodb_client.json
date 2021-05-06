@@ -1,0 +1,33 @@
+{
+    "AttributeDefinitions": [
+        {
+            "AttributeName": "Client",
+            "AttributeType": "S"
+        }
+    ],
+    "TableName": "frontend-ddb-client",
+    "KeySchema": [
+        {
+            "AttributeName": "Client",
+            "KeyType": "HASH"
+        }
+    ],
+    "Tags": [
+        {
+            "Key": "Name",
+            "Value": "frontend-ddb-client"
+        },
+        {
+            "Key": "Date",
+            "Value": "5_May_2021"
+        }
+    ],
+    "ProvisionedThroughput": {
+        "ReadCapacityUnits": 5,
+        "WriteCapacityUnits": 5
+    },
+    "StreamSpecification": {
+        "StreamEnabled": true,
+        "StreamViewType": "NEW_AND_OLD_IMAGES"
+    }
+}
