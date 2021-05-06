@@ -47,7 +47,7 @@ functions:
     role: arn:aws:iam::648410456371:role/frontend-delete-lambda-service-role
     timeout: 45
     events:
-      - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-05T13:45:56.713
+      - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502
 
 resources:
   - ${file(resources/codebuild-role.yml)}

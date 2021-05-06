@@ -24,7 +24,7 @@ Resources:
               - logs:PutLogEvents
               - logs:CreateLogStream
             Resource: "arn:aws:logs:eu-central-1:648410456371:log-group:/aws/lambda/frontend-ecs-services-dev-removeservice:*"
-      - PolicyName: "ddb-permissions"
+      - PolicyName: "permissions-for-ddb-streams"
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -33,8 +33,29 @@ Resources:
               - dynamodb:GetRecords
               - dynamodb:GetShardIterator
               - dynamodb:DescribeStream
-            Resource: "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-05T13:45:56.713"
+            Resource: "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502"
           - Effect: Allow
             Action:
               - dynamodb:ListStreams
             Resource: "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client"
+      - PolicyName: "service-deletion"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+              - logs:DeleteLogGroup
+            Resource: "arn:aws:logs:eu-central-1:648410456371:*"
+          - Effect: Allow
+            Action:
+              - elasticloadbalancing:DeleteTargetGroup
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - elasticloadbalancing:DeleteListener
+            Resource: "arn:aws:elasticloadbalancing:eu-central-1:648410456371:listener/app/lb-test-frontend-tf/719baf42afe40dff/*"
+          - Effect: Allow
+            Action:
+              - ecs:DeregisterTaskDefinition
+              - ecs:DeleteService
+            Resource: "*"

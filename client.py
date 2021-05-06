@@ -1,4 +1,5 @@
 import boto3
+import botocore
 from datetime import datetime
 from flask import Flask, request, jsonify
 import logging
@@ -56,21 +57,25 @@ def createclient():
 
     # dynamodb module
     logger.info("Putting dynamodb item")
-    table.put_item(
-            Item={
-                'Client': name,
-                'Date': parsedTime,
-                'Port': port_n,
-                'BuildId': build['build']['id'],
-                'ListenerArn': '',
-                'TargetArn': ''
-            },
-            ConditionExpression='attribute_not_exists(Client)',
-        )
-        
+    try:
+        table.put_item(
+                Item={
+                    'Client': name,
+                    'Date': parsedTime,
+                    'Port': port_n,
+                    'BuildId': build['build']['id'],
+                    'ListenerArn': '',
+                    'TargetArn': '',
+                    'TaskDefinitionArn': ''
+                },
+                ConditionExpression='attribute_not_exists(Client)',
+            )
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'ConditionalCheckFailedException':
+            logger.warn('Item is already in table') # might have to check whether this is possible
+        else:
+            raise error
     return "Client added successfully"
-    # except:
-    #     return jsonify({'message' : 'An error occurred'}), 400
 
 
 @app.route("/removeclient", methods=['DELETE'])

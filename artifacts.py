@@ -116,86 +116,95 @@ def handler(event, context):
     )
     listener_arn = listener['Listeners'][0]['ListenerArn']
 
+    logger.info("Creating Task Definition")
     ## task definition
-    # ecs_client.register_task_definition(
-    #     family='task_definition_'+client,
-    #     executionRoleArn=role,
-    #     networkMode='awsvpc',
-    #     containerDefinitions=[
-    #         {
-    #             'name': containerName,
-    #             'image': image,
-    #             'portMappings': [
-    #                 {
-    #                     'containerPort': int(port), # dynamic from dynamodb
-    #                 },
-    #             ],
-    #             'logConfiguration': {
-    #                 'logDriver': 'awslogs',
-    #                 'options': {
-    #                     "awslogs-region": "eu-central-1",
-    #                     "awslogs-group": "/ecs/front/"+client,
-    #                     "awslogs-stream-prefix": "ecs"
-    #                 },
-    #             },
-    #         },
-    #     ],
-    #     requiresCompatibilities=[
-    #         'FARGATE'
-    #     ],
-    #     cpu='512',
-    #     memory='1024',
-    # )
+    task_definition = ecs_client.register_task_definition(
+        family='task_definition_'+client,
+        executionRoleArn=role,
+        networkMode='awsvpc',
+        containerDefinitions=[
+            {
+                'name': containerName,
+                'image': image,
+                'portMappings': [
+                    {
+                        'containerPort': int(port), # dynamic from dynamodb
+                    },
+                ],
+                'logConfiguration': {
+                    'logDriver': 'awslogs',
+                    'options': {
+                        "awslogs-region": "eu-central-1",
+                        "awslogs-group": "/ecs/front/"+client,
+                        "awslogs-stream-prefix": "ecs"
+                    },
+                },
+            },
+        ],
+        requiresCompatibilities=[
+            'FARGATE'
+        ],
+        cpu='512',
+        memory='1024',
+    )
+    taskd_arn = task_definition['taskDefinition']['taskDefinitionArn']
 
-    # ## service
-    # ecs_client.create_service(
-    #     cluster=cluster,
-    #     serviceName='service_'+client,
-    #     taskDefinition='task_definition_'+client,
-    #     loadBalancers=[
-    #         {
-    #             'targetGroupArn': target_arn, # arn of target group
-    #             'containerName': containerName,
-    #             'containerPort': int(port)
-    #         },
-    #     ],
-    #     desiredCount=1,
-    #     capacityProviderStrategy=[
-    #         {
-    #             'capacityProvider': 'FARGATE',
-    #             'weight': 100
-    #         }
-    #     ],
-    #     networkConfiguration={
-    #         'awsvpcConfiguration': {
-    #             'subnets': [ # might be hardcoded as well
-    #                 pub_subnet_a,
-    #                 pub_subnet_b
-    #             ],
-    #             # for now this can be hardcoded, but it should probably be
-    #             # segragated based on clients need
-    #             'securityGroups': [
-    #                 service_sg,
-    #             ],
-    #             'assignPublicIp': 'ENABLED'
-    #         }
-    #     },
-    #     tags=[
-    #         {
-    #             'key': 'Name',
-    #             'value': client
-    #         },
-    #         {
-    #             'key': 'Port',
-    #             'value': port
-    #         },
-    #         {
-    #             'key': 'Date',
-    #             'value': date
-    #         },
-    #     ],
-    #     propagateTags='SERVICE',
-    # )
+    logger.info("Creating Service")
+    ## service
+    try:
+        ecs_client.create_service(
+            cluster=cluster,
+            serviceName='service_'+client,
+            taskDefinition='task_definition_'+client,
+            loadBalancers=[
+                {
+                    'targetGroupArn': target_arn, # arn of target group
+                    'containerName': containerName,
+                    'containerPort': int(port)
+                },
+            ],
+            desiredCount=1,
+            capacityProviderStrategy=[
+                {
+                    'capacityProvider': 'FARGATE',
+                    'weight': 100
+                }
+            ],
+            networkConfiguration={
+                'awsvpcConfiguration': {
+                    'subnets': [ # might be hardcoded as well
+                        pub_subnet_a,
+                        pub_subnet_b
+                    ],
+                    # for now this can be hardcoded, but it should probably be
+                    # segragated based on clients need
+                    'securityGroups': [
+                        service_sg,
+                    ],
+                    'assignPublicIp': 'ENABLED'
+                }
+            },
+            tags=[
+                {
+                    'key': 'Name',
+                    'value': client
+                },
+                {
+                    'key': 'Port',
+                    'value': port
+                },
+                {
+                    'key': 'Date',
+                    'value': date
+                },
+            ],
+            propagateTags='SERVICE',
+        )
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'InvalidParameterException':
+            logger.warn('Service already existing') # might have to check whether this is possible
+        else:
+            raise error
 
     logger.info("Updating Item in DDB table")
     ## update item to include more attributes
@@ -206,13 +215,16 @@ def handler(event, context):
                 'S': client,
             }
         },
-        UpdateExpression="SET ListenerArn = :LArn, TargetArn = :TArn",
+        UpdateExpression="SET ListenerArn = :LArn, TargetArn = :TArn, TaskDefinitionArn = :TDArn",
         ExpressionAttributeValues={
             ':LArn': {
                 'S': listener_arn,
             },
             ':TArn': {
                 'S': target_arn,
+            },
+            ':TDArn': {
+                'S': taskd_arn,
             },
         }
     )

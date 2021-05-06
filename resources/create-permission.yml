@@ -11,18 +11,6 @@ Resources:
             Service: lambda.amazonaws.com
           Action: sts:AssumeRole
       Policies:
-      - PolicyName: "load-balancer-handling"
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-          - Effect: Allow
-            Action:
-              - elasticloadbalancing:CreateTargetGroup
-            Resource: "*"
-          - Effect: Allow
-            Action:
-              - elasticloadbalancing:CreateListener
-            Resource: "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff"
       - PolicyName: "cloudwatch-logs-config"
         PolicyDocument:
           Version: "2012-10-17"
@@ -36,24 +24,7 @@ Resources:
               - logs:PutLogEvents
               - logs:CreateLogStream
             Resource: "arn:aws:logs:eu-central-1:648410456371:log-group:/aws/lambda/frontend-ecs-services-dev-createservice:*"
-      - PolicyName: "ecs-service-permissions"
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-          - Effect: Allow
-            Action:
-              - iam:PassRole
-            Resource: "*"
-      - PolicyName: "iam-permissions"
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-          - Effect: Allow
-            Action:
-              - ecs:RegisterTaskDefinition
-              - ecs:CreateService
-            Resource: "*"
-      - PolicyName: "query-ddb-table"
+      - PolicyName: "permissions-for-ddb"
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -62,3 +33,24 @@ Resources:
               - dynamodb:Query
               - dynamodb:UpdateItem
             Resource: "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client"
+      - PolicyName: "service-creation"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+              - elasticloadbalancing:CreateTargetGroup
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - elasticloadbalancing:CreateListener
+            Resource: "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff"
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - ecs:RegisterTaskDefinition
+              - ecs:CreateService
+            Resource: "*"
