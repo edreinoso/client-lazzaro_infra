@@ -5,7 +5,7 @@ service: frontend-ecs-services
 plugins:
   - serverless-python-requirements
   - serverless-wsgi
-
+  - serverless-dotenv-plugin
 custom:
   wsgi:
     app: client.app # app.py and the app variable inside
@@ -18,6 +18,17 @@ provider:
   runtime: python3.6
   stage: dev
   region: eu-central-1
+  environment:
+    vpc_id: ${env:vpc_id}
+    role: ${env:role}
+    image: ${env:image}
+    containerName: ${env:containerName}
+    cluster: ${env:cluster}
+    pub_subnet_a: ${env:pub_subnet_a}
+    pub_subnet_b: ${env:pub_subnet_b}
+    service_sg: ${env:service_sg}
+    certificateArn: ${env:certificateArn}
+    bucket: ${env:bucket}
 
 functions:
   ## Creation process

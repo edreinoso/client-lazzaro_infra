@@ -49,13 +49,19 @@ Resources:
           - Effect: Allow
             Action:
               - elasticloadbalancing:DeleteTargetGroup
+              - ecs:DeregisterTaskDefinition
+              - ecs:DeleteService
             Resource: "*"
           - Effect: Allow
             Action:
               - elasticloadbalancing:DeleteListener
-            Resource: "arn:aws:elasticloadbalancing:eu-central-1:648410456371:listener/app/lb-test-frontend-tf/719baf42afe40dff/*"
+            Resource: "*"
           - Effect: Allow
             Action:
-              - ecs:DeregisterTaskDefinition
-              - ecs:DeleteService
-            Resource: "*"
+              - codebuild:BatchDeleteBuilds
+              - ecr:BatchDeleteImage
+              - s3:DeleteObject
+            Resource:
+              - "arn:aws:ecr:eu-central-1:648410456371:repository/lazzaro-front-repo"
+              - "arn:aws:codebuild:eu-central-1:648410456371:project/frontend-code-build-service"
+              - "arn:aws:s3:::lazzaro-ongs-template-artifacts/*"

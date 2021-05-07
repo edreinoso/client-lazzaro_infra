@@ -1,4 +1,5 @@
 import json
+import os
 import boto3
 import botocore
 from boto3.dynamodb.conditions import Key
@@ -23,16 +24,8 @@ def handler(event, context):
 
     # hardcoded vars
     # these could be passed as environment variables
-    vpc_id='vpc-041e9a7015a49e342' # hardcoded value
-    role='arn:aws:iam::648410456371:role/frontend-services-role'
-    image='648410456371.dkr.ecr.eu-central-1.amazonaws.com/lazzaro-front-repo:'+client
-    containerName='ecs-cluster-'+client
-    cluster='arn:aws:ecs:eu-central-1:648410456371:cluster/lazzaro-front-cluster'
-    lb_arn='arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff'
-    pub_subnet_a='subnet-0a0eb52403e062c21'
-    pub_subnet_b='subnet-05c1fa54f8b6e620d'
-    service_sg='sg-0d88106cb83bfb963' # this should be dynamic
-    certificateArn='arn:aws:acm:eu-central-1:648410456371:certificate/92887f51-ea40-418f-bd00-c6da4d3ec36d'
+    image=os.environ['image']+client
+    containerName=os.environ['containerName']+client
 
 
     # get stuff from dynamodb
@@ -64,7 +57,7 @@ def handler(event, context):
     # create
     ## logs
     try:
-        logger.info("Creating CloudWatch Logs")
+        logger.info("1. Creating CloudWatch Logs")
         log_client.create_log_group(
             logGroupName='/ecs/front/'+client,
             tags={
@@ -79,12 +72,12 @@ def handler(event, context):
             raise error
 
 
-    logger.info("Creating Target Groups")
+    logger.info("2. Creating Target Groups")
     ## target groups --- ## stops here
     targetg = elb_client.create_target_group(
         Name=client, #dynamic name based on ngo
         Port=int(port),
-        VpcId=vpc_id,#this could probably be hardcoded
+        VpcId=os.environ['vpc_id'],#this could probably be hardcoded
         Protocol='HTTP',#this could possibly be dynamic
         HealthCheckPath='/healthcheck',
         HealthCheckPort=port,
@@ -93,17 +86,16 @@ def handler(event, context):
     )
     target_arn = targetg['TargetGroups'][0]['TargetGroupArn']
 
-    logger.info("Creating Listener")
+    logger.info("3. Creating Listener")
     ## listener
     listener = elb_client.create_listener(
-        LoadBalancerArn=lb_arn,
+        LoadBalancerArn=os.environ['lb_arn'],
         Protocol='HTTP',
-        Port=int(port),
-        # this might be useful later
-        # SslPolicy='string',
+        # Port=int(port),
+        # SslPolicy='ELBSecurityPolicy-2016-08',
         # Certificates=[
         #     {
-        #         'CertificateArn': certificateArn,
+        #         'CertificateArn': os.environ['certificateArn'],
         #     },
         # ],
         DefaultActions=[
@@ -116,11 +108,11 @@ def handler(event, context):
     )
     listener_arn = listener['Listeners'][0]['ListenerArn']
 
-    logger.info("Creating Task Definition")
+    logger.info("4. Creating Task Definition")
     ## task definition
     task_definition = ecs_client.register_task_definition(
         family='task_definition_'+client,
-        executionRoleArn=role,
+        executionRoleArn=os.environ['role'],
         networkMode='awsvpc',
         containerDefinitions=[
             {
@@ -149,11 +141,11 @@ def handler(event, context):
     )
     taskd_arn = task_definition['taskDefinition']['taskDefinitionArn']
 
-    logger.info("Creating Service")
+    logger.info("5. Creating Service")
     ## service
     try:
         ecs_client.create_service(
-            cluster=cluster,
+            cluster=os.environ['cluster'],
             serviceName='service_'+client,
             taskDefinition='task_definition_'+client,
             loadBalancers=[
@@ -173,13 +165,13 @@ def handler(event, context):
             networkConfiguration={
                 'awsvpcConfiguration': {
                     'subnets': [ # might be hardcoded as well
-                        pub_subnet_a,
-                        pub_subnet_b
+                        os.environ['pub_subnet_a'],
+                        os.environ['pub_subnet_b']
                     ],
                     # for now this can be hardcoded, but it should probably be
                     # segragated based on clients need
                     'securityGroups': [
-                        service_sg,
+                        os.environ['service_sg'],
                     ],
                     'assignPublicIp': 'ENABLED'
                 }
@@ -206,7 +198,7 @@ def handler(event, context):
         else:
             raise error
 
-    logger.info("Updating Item in DDB table")
+    logger.info("6. Updating Item in DDB table")
     ## update item to include more attributes
     ddb_client.update_item(
         TableName='frontend-ddb-client',
