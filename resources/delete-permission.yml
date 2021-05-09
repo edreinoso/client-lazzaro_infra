@@ -65,3 +65,7 @@ Resources:
               - "arn:aws:ecr:eu-central-1:648410456371:repository/lazzaro-front-repo"
               - "arn:aws:codebuild:eu-central-1:648410456371:project/frontend-code-build-service"
               - "arn:aws:s3:::lazzaro-ongs-template-artifacts/*"
+          - Effect: Allow
+            Action:
+              - route53:ChangeResourceRecordSets
+            Resource: "arn:aws:route53:::hostedzone/Z02368721HBX9HT236NI2"

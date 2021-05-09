@@ -21,7 +21,12 @@
         "service_sg": "sg-0d88106cb83bfb963",
         "certificateArn": "arn:aws:acm:eu-central-1:648410456371:certificate/92887f51-ea40-418f-bd00-c6da4d3ec36d",
         "bucket": "lazzaro-ongs-template-artifacts",
-        "lb_arn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff"
+        "lb_arn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff",
+        "account_id": "648410456371",
+        "repositoryName": "lazzaro-front-repo",
+        "r53HostedZoneId": "Z02368721HBX9HT236NI2",
+        "elbHostedZoneId": "Z215JYRZR1TBD5",
+        "dnsName": "lb-test-frontend-tf-137702013.eu-central-1.elb.amazonaws.com"
       },
       "versionFunctions": true,
       "remoteFunctionData": null,
@@ -108,7 +113,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/frontend-ecs-services/dev/1620423501224-2021-05-07T21:38:21.224Z/frontend-ecs-services.zip"
+                "S3Key": "serverless/frontend-ecs-services/dev/1620552049090-2021-05-09T09:20:49.090Z/frontend-ecs-services.zip"
               },
               "FunctionName": "frontend-ecs-services-dev-client",
               "Handler": "wsgi_handler.handler",
@@ -128,7 +133,12 @@
                   "service_sg": "sg-0d88106cb83bfb963",
                   "certificateArn": "arn:aws:acm:eu-central-1:648410456371:certificate/92887f51-ea40-418f-bd00-c6da4d3ec36d",
                   "bucket": "lazzaro-ongs-template-artifacts",
-                  "lb_arn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff"
+                  "lb_arn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff",
+                  "account_id": "648410456371",
+                  "repositoryName": "lazzaro-front-repo",
+                  "r53HostedZoneId": "Z02368721HBX9HT236NI2",
+                  "elbHostedZoneId": "Z215JYRZR1TBD5",
+                  "dnsName": "lb-test-frontend-tf-137702013.eu-central-1.elb.amazonaws.com"
                 }
               }
             },
@@ -136,14 +146,14 @@
               "ClientLogGroup"
             ]
           },
-          "ClientLambdaVersionpGUOWrTG5vGqgllLKgGkT7nIGnyIl0zAD7fVpMElcY": {
+          "ClientLambdaVersion8GO0edkLnd4I9FfQfazwKT3hKBraPkDQ7hxm5K6H3JA": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "ClientLambdaFunction"
               },
-              "CodeSha256": "LG+mkGwnFnuhLeDCEM8r7OmJMzqCd8bZJn1o6QNIadQ="
+              "CodeSha256": "lyTlIvQI82s2x49zQxJxUPtc3O8LbpztlPSQPPAQzn0="
             }
           },
           "CreateserviceLambdaFunction": {
@@ -153,7 +163,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/frontend-ecs-services/dev/1620423501224-2021-05-07T21:38:21.224Z/frontend-ecs-services.zip"
+                "S3Key": "serverless/frontend-ecs-services/dev/1620552049090-2021-05-09T09:20:49.090Z/frontend-ecs-services.zip"
               },
               "FunctionName": "frontend-ecs-services-dev-createservice",
               "Handler": "artifacts.handler",
@@ -173,7 +183,12 @@
                   "service_sg": "sg-0d88106cb83bfb963",
                   "certificateArn": "arn:aws:acm:eu-central-1:648410456371:certificate/92887f51-ea40-418f-bd00-c6da4d3ec36d",
                   "bucket": "lazzaro-ongs-template-artifacts",
-                  "lb_arn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff"
+                  "lb_arn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff",
+                  "account_id": "648410456371",
+                  "repositoryName": "lazzaro-front-repo",
+                  "r53HostedZoneId": "Z02368721HBX9HT236NI2",
+                  "elbHostedZoneId": "Z215JYRZR1TBD5",
+                  "dnsName": "lb-test-frontend-tf-137702013.eu-central-1.elb.amazonaws.com"
                 }
               }
             },
@@ -181,14 +196,14 @@
               "CreateserviceLogGroup"
             ]
           },
-          "CreateserviceLambdaVersionai7qzdIYTH7fuP2ERwDmhSljcVvrVTGgIqFRm3kAjpc": {
+          "CreateserviceLambdaVersionTWWmgjIyLM2dQtV32vLTVwUuANanUoKX9vN7Rlpbw": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "CreateserviceLambdaFunction"
               },
-              "CodeSha256": "LG+mkGwnFnuhLeDCEM8r7OmJMzqCd8bZJn1o6QNIadQ="
+              "CodeSha256": "lyTlIvQI82s2x49zQxJxUPtc3O8LbpztlPSQPPAQzn0="
             }
           },
           "RemoveserviceLambdaFunction": {
@@ -198,7 +213,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/frontend-ecs-services/dev/1620423501224-2021-05-07T21:38:21.224Z/frontend-ecs-services.zip"
+                "S3Key": "serverless/frontend-ecs-services/dev/1620552049090-2021-05-09T09:20:49.090Z/frontend-ecs-services.zip"
               },
               "FunctionName": "frontend-ecs-services-dev-removeservice",
               "Handler": "stream.handler",
@@ -218,7 +233,12 @@
                   "service_sg": "sg-0d88106cb83bfb963",
                   "certificateArn": "arn:aws:acm:eu-central-1:648410456371:certificate/92887f51-ea40-418f-bd00-c6da4d3ec36d",
                   "bucket": "lazzaro-ongs-template-artifacts",
-                  "lb_arn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff"
+                  "lb_arn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff",
+                  "account_id": "648410456371",
+                  "repositoryName": "lazzaro-front-repo",
+                  "r53HostedZoneId": "Z02368721HBX9HT236NI2",
+                  "elbHostedZoneId": "Z215JYRZR1TBD5",
+                  "dnsName": "lb-test-frontend-tf-137702013.eu-central-1.elb.amazonaws.com"
                 }
               }
             },
@@ -226,14 +246,14 @@
               "RemoveserviceLogGroup"
             ]
           },
-          "RemoveserviceLambdaVersionmuczVqQxwjEzrS8vH8IZ7qVDKahFCPpDhIe1WWT8aUg": {
+          "RemoveserviceLambdaVersionoiLUCYFxJQGrdKJHwWvJy9CvTJGz42wJDkAHAbxyf4": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "RemoveserviceLambdaFunction"
               },
-              "CodeSha256": "LG+mkGwnFnuhLeDCEM8r7OmJMzqCd8bZJn1o6QNIadQ="
+              "CodeSha256": "lyTlIvQI82s2x49zQxJxUPtc3O8LbpztlPSQPPAQzn0="
             }
           },
           "S3BucketLazzaroongstemplateartifacts": {
@@ -414,7 +434,7 @@
               "MethodResponses": []
             }
           },
-          "ApiGatewayDeployment1620423486545": {
+          "ApiGatewayDeployment1620552034019": {
             "Type": "AWS::ApiGateway::Deployment",
             "Properties": {
               "RestApiId": {
@@ -725,6 +745,13 @@
                           "ecs:CreateService"
                         ],
                         "Resource": "*"
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "route53:ChangeResourceRecordSets"
+                        ],
+                        "Resource": "arn:aws:route53:::hostedzone/Z02368721HBX9HT236NI2"
                       }
                     ]
                   }
@@ -834,6 +861,13 @@
                           "arn:aws:codebuild:eu-central-1:648410456371:project/frontend-code-build-service",
                           "arn:aws:s3:::lazzaro-ongs-template-artifacts/*"
                         ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "route53:ChangeResourceRecordSets"
+                        ],
+                        "Resource": "arn:aws:route53:::hostedzone/Z02368721HBX9HT236NI2"
                       }
                     ]
                   }
@@ -851,19 +885,19 @@
           "ClientLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "ClientLambdaVersionpGUOWrTG5vGqgllLKgGkT7nIGnyIl0zAD7fVpMElcY"
+              "Ref": "ClientLambdaVersion8GO0edkLnd4I9FfQfazwKT3hKBraPkDQ7hxm5K6H3JA"
             }
           },
           "CreateserviceLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "CreateserviceLambdaVersionai7qzdIYTH7fuP2ERwDmhSljcVvrVTGgIqFRm3kAjpc"
+              "Ref": "CreateserviceLambdaVersionTWWmgjIyLM2dQtV32vLTVwUuANanUoKX9vN7Rlpbw"
             }
           },
           "RemoveserviceLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "RemoveserviceLambdaVersionmuczVqQxwjEzrS8vH8IZ7qVDKahFCPpDhIe1WWT8aUg"
+              "Ref": "RemoveserviceLambdaVersionoiLUCYFxJQGrdKJHwWvJy9CvTJGz42wJDkAHAbxyf4"
             }
           },
           "ServiceEndpoint": {
@@ -1001,7 +1035,7 @@
         "timeout": 6,
         "runtime": "python3.6",
         "vpc": {},
-        "versionLogicalId": "ClientLambdaVersionpGUOWrTG5vGqgllLKgGkT7nIGnyIl0zAD7fVpMElcY"
+        "versionLogicalId": "ClientLambdaVersion8GO0edkLnd4I9FfQfazwKT3hKBraPkDQ7hxm5K6H3JA"
       },
       "createservice": {
         "handler": "artifacts.handler",
@@ -1020,7 +1054,7 @@
         "memory": 1024,
         "runtime": "python3.6",
         "vpc": {},
-        "versionLogicalId": "CreateserviceLambdaVersionai7qzdIYTH7fuP2ERwDmhSljcVvrVTGgIqFRm3kAjpc"
+        "versionLogicalId": "CreateserviceLambdaVersionTWWmgjIyLM2dQtV32vLTVwUuANanUoKX9vN7Rlpbw"
       },
       "removeservice": {
         "handler": "stream.handler",
@@ -1036,7 +1070,7 @@
         "memory": 1024,
         "runtime": "python3.6",
         "vpc": {},
-        "versionLogicalId": "RemoveserviceLambdaVersionmuczVqQxwjEzrS8vH8IZ7qVDKahFCPpDhIe1WWT8aUg"
+        "versionLogicalId": "RemoveserviceLambdaVersionoiLUCYFxJQGrdKJHwWvJy9CvTJGz42wJDkAHAbxyf4"
       }
     },
     "resources": {
@@ -1286,6 +1320,13 @@
                         "ecs:CreateService"
                       ],
                       "Resource": "*"
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "route53:ChangeResourceRecordSets"
+                      ],
+                      "Resource": "arn:aws:route53:::hostedzone/Z02368721HBX9HT236NI2"
                     }
                   ]
                 }
@@ -1395,6 +1436,13 @@
                         "arn:aws:codebuild:eu-central-1:648410456371:project/frontend-code-build-service",
                         "arn:aws:s3:::lazzaro-ongs-template-artifacts/*"
                       ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "route53:ChangeResourceRecordSets"
+                      ],
+                      "Resource": "arn:aws:route53:::hostedzone/Z02368721HBX9HT236NI2"
                     }
                   ]
                 }
@@ -1411,7 +1459,7 @@
     "artifact": "/Users/elchoco/development/web/lazzaro/frontdeployment/.serverless/frontend-ecs-services.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/frontend-ecs-services/dev/1620423501224-2021-05-07T21:38:21.224Z",
+    "artifactDirectoryName": "serverless/frontend-ecs-services/dev/1620552049090-2021-05-09T09:20:49.090Z",
     "artifact": "frontend-ecs-services.zip"
   }
 }

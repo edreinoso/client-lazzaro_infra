@@ -8,25 +8,18 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-def handler(event, context):
-    # boto3 init
-    dynamodb = boto3.resource('dynamodb', region_name='eu-central-1')
-    ddb_client = boto3.client('dynamodb')
-    elb_client = boto3.client('elbv2')
-    ecs_client = boto3.client('ecs')
-    log_client = boto3.client('logs')
-    table = dynamodb.Table('frontend-ddb-client')
-    
-    # getting client from s3 event
-    key = event['Records'][0]['s3']['object']['key']
-    obj = key.split('/')[1]
-    client = obj.split('.')[0]
+# Global vars: boto3 init
+dynamodb = boto3.resource('dynamodb', region_name='eu-central-1')
+ddb_client = boto3.client('dynamodb')
+elb_client = boto3.client('elbv2')
+ecs_client = boto3.client('ecs')
+log_client = boto3.client('logs')
+r53_client = boto3.client('route53')
+table = dynamodb.Table('frontend-ddb-client')
 
-    # hardcoded vars
-    # these could be passed as environment variables
+def handle_service_creation(client):
     image=os.environ['image']+client
     containerName=os.environ['containerName']+client
-
 
     # get stuff from dynamodb
     query = table.query(
@@ -90,14 +83,14 @@ def handler(event, context):
     ## listener
     listener = elb_client.create_listener(
         LoadBalancerArn=os.environ['lb_arn'],
-        Protocol='HTTP',
-        # Port=int(port),
-        # SslPolicy='ELBSecurityPolicy-2016-08',
-        # Certificates=[
-        #     {
-        #         'CertificateArn': os.environ['certificateArn'],
-        #     },
-        # ],
+        Protocol='HTTPS',
+        Port=int(port),
+        SslPolicy='ELBSecurityPolicy-2016-08',
+        Certificates=[
+            {
+                'CertificateArn': os.environ['certificateArn'],
+            },
+        ],
         DefaultActions=[
             {
                 'Type': 'forward',
@@ -197,8 +190,31 @@ def handler(event, context):
             logger.warn('Service already existing') # might have to check whether this is possible
         else:
             raise error
+    
+    logger.info("6. Route53 Record Set")
+    ## record set
+    r53_client.change_resource_record_sets(
+        HostedZoneId=os.environ['r53HostedZoneId'],
+        ChangeBatch={
+            'Comment': 'testing dns auto creation record',
+            'Changes': [
+                {
+                    'Action': 'CREATE',
+                    'ResourceRecordSet': {
+                        'Name': client+'.backend.lazzaro.io',
+                        'Type': 'A',
+                        'AliasTarget': {
+                            'HostedZoneId': os.environ['elbHostedZoneId'], # zone of the load balancer
+                            'DNSName': os.environ['dnsName'], # need dns of balancer
+                            'EvaluateTargetHealth': True
+                        },
+                    }
+                },
+            ]
+        }
+    )
 
-    logger.info("6. Updating Item in DDB table")
+    logger.info("7. Updating Item in DDB table")
     ## update item to include more attributes
     ddb_client.update_item(
         TableName='frontend-ddb-client',
@@ -221,6 +237,14 @@ def handler(event, context):
         }
     )
 
+def handler(event, context):
+    # getting client from s3 event
+    key = event['Records'][0]['s3']['object']['key']
+    obj = key.split('/')[1]
+    client = obj.split('.')[0]
+
+    handle_service_creation(client)
+    
     return {
         'statusCode': 200,
         'body': json.dumps('Function triggred by S3!')

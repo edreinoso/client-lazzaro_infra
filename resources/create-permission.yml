@@ -54,3 +54,7 @@ Resources:
               - ecs:RegisterTaskDefinition
               - ecs:CreateService
             Resource: "*"
+          - Effect: Allow
+            Action:
+              - route53:ChangeResourceRecordSets
+            Resource: "arn:aws:route53:::hostedzone/Z02368721HBX9HT236NI2"

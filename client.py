@@ -1,4 +1,5 @@
 import boto3
+import os
 import botocore
 from datetime import datetime
 from flask import Flask, request, jsonify
@@ -11,6 +12,7 @@ app = Flask(__name__)
 # Global vars
 codebuild_client = boto3.client('codebuild')
 dynamodb = boto3.resource('dynamodb', region_name='eu-central-1')
+ddb_client = boto3.client('dynamodb')
 table = dynamodb.Table('frontend-ddb-client')
 
 @app.route("/createclient", methods=['POST'])
@@ -75,6 +77,7 @@ def createclient():
             logger.warn('Item is already in table') # might have to check whether this is possible
         else:
             raise error
+    
     return "Client added successfully"
 
 
@@ -82,8 +85,8 @@ def createclient():
 def removeclient():
     name=request.json.get('name') # client name
 
-    dynamodb.delete_item(
-        TableName='frontend-dynamodb-service',
+    ddb_client.delete_item(
+        TableName='frontend-ddb-client',
         Key={
             'Client': {
                 'S': name,
