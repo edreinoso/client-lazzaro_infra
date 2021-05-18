@@ -13,9 +13,12 @@ dynamodb = boto3.resource('dynamodb', region_name='eu-central-1')
 ddb_client = boto3.client('dynamodb')
 elb_client = boto3.client('elbv2')
 ecs_client = boto3.client('ecs')
+sg_client = boto3.client('ec2')
 log_client = boto3.client('logs')
 r53_client = boto3.client('route53')
 table = dynamodb.Table('frontend-ddb-client')
+
+# def testing(client):
 
 def handle_service_creation(client):
     image=os.environ['image']+client
@@ -79,12 +82,25 @@ def handle_service_creation(client):
     )
     target_arn = targetg['TargetGroups'][0]['TargetGroupArn']
 
+    # if no listener has been found in the load balancer
+    # then create a listener
+    # this might require a lot of computation?
+    logger.info("X. Checking for a listener")
+    response = client.describe_listeners(
+        LoadBalancerArn='string',
+        ListenerArns=[
+            'string',
+        ],
+        Marker='string',
+        PageSize=123
+    )
+
     logger.info("3. Creating Listener")
     ## listener
     listener = elb_client.create_listener(
         LoadBalancerArn=os.environ['lb_arn'],
         Protocol='HTTPS',
-        Port=int(port),
+        Port=443,
         SslPolicy='ELBSecurityPolicy-2016-08',
         Certificates=[
             {
@@ -100,6 +116,85 @@ def handle_service_creation(client):
         Tags=tags
     )
     listener_arn = listener['Listeners'][0]['ListenerArn']
+
+    ## Testing component ##
+    rule_listener = elb_client.create_rule(
+        ListenerArn='string',
+        Conditions=[
+            {
+                'Field': 'http-header',
+                'HttpHeaderConfig': {
+                    'HttpHeaderName': 'authority',
+                    'Values': [
+                        client+'.backend.lazzaro.io',
+                    ]
+                },
+            },
+        ],
+        Priority=123,
+        Actions=[
+            {
+                'Type': 'forward',
+                'TargetGroupArn': target_arn,
+                'Order': 123, # have to think about what to do with this
+                'ForwardConfig': {
+                    'TargetGroups': [
+                        {
+                            'TargetGroupArn': target_arn,
+                            'Weight': 123 # have to think about what to do with this
+                        },
+                    ]
+                }
+            },
+        ],
+        Tags=tags
+    )
+    ## Testing component ##
+
+    logger.info("X. Creating Security Group")
+    response = sg_client.create_security_group(GroupName=client+'_sg',
+                                         Description='security group for client: '+client,
+                                         VpcId=os.environ['vpc_id'])
+    security_group_id = response['GroupId']
+
+    sg_client.authorize_security_group_ingress(
+        GroupId=security_group_id,
+        IpPermissions=[
+            {
+                'IpProtocol': 'tcp',
+                'FromPort': 80,
+                'ToPort': 80,
+                'PrefixListIds': [
+                    {
+                        'Description': 'allowing ingress from nat',
+                        'PrefixListId': os.environ['nat_sg']
+                    }
+                ]
+            },
+            {
+                'IpProtocol': 'tcp',
+                'FromPort': 443,
+                'ToPort': 443,
+                'PrefixListIds': [
+                    {
+                        'Description': 'allowing ingress from nat',
+                        'PrefixListId': os.environ['nat_sg']
+                    }
+                ]
+            },
+            {
+                'IpProtocol': 'tcp',
+                'FromPort': port,
+                'ToPort': port,
+                'PrefixListIds': [
+                    {
+                        'Description': 'allowing ingress from nat',
+                        'PrefixListId': os.environ['elb_sg']
+                    }
+                ]
+            },
+        ]
+    )
 
     logger.info("4. Creating Task Definition")
     ## task definition
@@ -223,7 +318,7 @@ def handle_service_creation(client):
                 'S': client,
             }
         },
-        UpdateExpression="SET ListenerArn = :LArn, TargetArn = :TArn, TaskDefinitionArn = :TDArn",
+        UpdateExpression="SET ListenerArn = :LArn, TargetArn = :TArn, TaskDefinitionArn = :TDArn, SecurityGroupId = :SGId",
         ExpressionAttributeValues={
             ':LArn': {
                 'S': listener_arn,
@@ -234,6 +329,9 @@ def handle_service_creation(client):
             ':TDArn': {
                 'S': taskd_arn,
             },
+            ':SGId':{
+                'S': security_group_id
+            }
         }
     )
 

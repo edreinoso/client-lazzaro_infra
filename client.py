@@ -68,7 +68,8 @@ def createclient():
                     'BuildId': build['build']['id'],
                     'ListenerArn': '',
                     'TargetArn': '',
-                    'TaskDefinitionArn': ''
+                    'TaskDefinitionArn': '',
+                    'SecurityGroupId': ''
                 },
                 ConditionExpression='attribute_not_exists(Client)',
             )
