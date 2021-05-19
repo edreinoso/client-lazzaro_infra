@@ -1,0 +1,915 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "The AWS CloudFormation template for this Serverless application",
+  "Resources": {
+    "ServerlessDeploymentBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ServerlessDeploymentBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "ServerlessDeploymentBucket"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":s3:::",
+                      {
+                        "Ref": "ServerlessDeploymentBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ClientLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/frontend-ecs-services-dev-client"
+      }
+    },
+    "CreateserviceLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/frontend-ecs-services-dev-createservice"
+      }
+    },
+    "RemoveserviceLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/frontend-ecs-services-dev-removeservice"
+      }
+    },
+    "ClientLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/frontend-ecs-services/dev/1621452960433-2021-05-19T19:36:00.433Z/frontend-ecs-services.zip"
+        },
+        "FunctionName": "frontend-ecs-services-dev-client",
+        "Handler": "wsgi_handler.handler",
+        "MemorySize": 1024,
+        "Role": "arn:aws:iam::648410456371:role/frontend-client-gateway-role",
+        "Runtime": "python3.6",
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "vpc_id": "vpc-041e9a7015a49e342",
+            "role": "arn:aws:iam::648410456371:role/frontend-services-role",
+            "image": "648410456371.dkr.ecr.eu-central-1.amazonaws.com/lazzaro-front-repo:",
+            "containerName": "ecs-cluster-",
+            "cluster": "arn:aws:ecs:eu-central-1:648410456371:cluster/lazzaro-front-cluster",
+            "pub_subnet_a": "subnet-0a0eb52403e062c21",
+            "pub_subnet_b": "subnet-05c1fa54f8b6e620d",
+            "service_sg": "sg-0d88106cb83bfb963",
+            "certificateArn": "arn:aws:acm:eu-central-1:648410456371:certificate/92887f51-ea40-418f-bd00-c6da4d3ec36d",
+            "bucket": "lazzaro-ongs-template-artifacts",
+            "lb_arn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff",
+            "nat_sg": "sg-00e933653a1ea7381",
+            "elb_sg": "sg-08dca709a29a55d95",
+            "account_id": "648410456371",
+            "repositoryName": "lazzaro-front-repo",
+            "r53HostedZoneId": "Z02368721HBX9HT236NI2",
+            "elbHostedZoneId": "Z215JYRZR1TBD5",
+            "dnsName": "lb-test-frontend-tf-137702013.eu-central-1.elb.amazonaws.com"
+          }
+        }
+      },
+      "DependsOn": [
+        "ClientLogGroup"
+      ]
+    },
+    "ClientLambdaVersionkwKizwSt91QSkPexY5WPqDP03szSPEel0bZl9mTni8k": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "ClientLambdaFunction"
+        },
+        "CodeSha256": "hDAU5A/XxNPz9xUX+kvTsO2NDNCSHb9Pz4MYvPOQEhA="
+      }
+    },
+    "CreateserviceLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/frontend-ecs-services/dev/1621452960433-2021-05-19T19:36:00.433Z/frontend-ecs-services.zip"
+        },
+        "FunctionName": "frontend-ecs-services-dev-createservice",
+        "Handler": "artifacts.handler",
+        "MemorySize": 1024,
+        "Role": "arn:aws:iam::648410456371:role/frontend-create-lambda-service-role",
+        "Runtime": "python3.6",
+        "Timeout": 60,
+        "Environment": {
+          "Variables": {
+            "vpc_id": "vpc-041e9a7015a49e342",
+            "role": "arn:aws:iam::648410456371:role/frontend-services-role",
+            "image": "648410456371.dkr.ecr.eu-central-1.amazonaws.com/lazzaro-front-repo:",
+            "containerName": "ecs-cluster-",
+            "cluster": "arn:aws:ecs:eu-central-1:648410456371:cluster/lazzaro-front-cluster",
+            "pub_subnet_a": "subnet-0a0eb52403e062c21",
+            "pub_subnet_b": "subnet-05c1fa54f8b6e620d",
+            "service_sg": "sg-0d88106cb83bfb963",
+            "certificateArn": "arn:aws:acm:eu-central-1:648410456371:certificate/92887f51-ea40-418f-bd00-c6da4d3ec36d",
+            "bucket": "lazzaro-ongs-template-artifacts",
+            "lb_arn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff",
+            "nat_sg": "sg-00e933653a1ea7381",
+            "elb_sg": "sg-08dca709a29a55d95",
+            "account_id": "648410456371",
+            "repositoryName": "lazzaro-front-repo",
+            "r53HostedZoneId": "Z02368721HBX9HT236NI2",
+            "elbHostedZoneId": "Z215JYRZR1TBD5",
+            "dnsName": "lb-test-frontend-tf-137702013.eu-central-1.elb.amazonaws.com"
+          }
+        }
+      },
+      "DependsOn": [
+        "CreateserviceLogGroup"
+      ]
+    },
+    "CreateserviceLambdaVersionwDms2HKLaKUmT7O3aArjC9XRiYhohb7GQgX9Z14Ivw": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "CreateserviceLambdaFunction"
+        },
+        "CodeSha256": "hDAU5A/XxNPz9xUX+kvTsO2NDNCSHb9Pz4MYvPOQEhA="
+      }
+    },
+    "RemoveserviceLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/frontend-ecs-services/dev/1621452960433-2021-05-19T19:36:00.433Z/frontend-ecs-services.zip"
+        },
+        "FunctionName": "frontend-ecs-services-dev-removeservice",
+        "Handler": "stream.handler",
+        "MemorySize": 1024,
+        "Role": "arn:aws:iam::648410456371:role/frontend-delete-lambda-service-role",
+        "Runtime": "python3.6",
+        "Timeout": 45,
+        "Environment": {
+          "Variables": {
+            "vpc_id": "vpc-041e9a7015a49e342",
+            "role": "arn:aws:iam::648410456371:role/frontend-services-role",
+            "image": "648410456371.dkr.ecr.eu-central-1.amazonaws.com/lazzaro-front-repo:",
+            "containerName": "ecs-cluster-",
+            "cluster": "arn:aws:ecs:eu-central-1:648410456371:cluster/lazzaro-front-cluster",
+            "pub_subnet_a": "subnet-0a0eb52403e062c21",
+            "pub_subnet_b": "subnet-05c1fa54f8b6e620d",
+            "service_sg": "sg-0d88106cb83bfb963",
+            "certificateArn": "arn:aws:acm:eu-central-1:648410456371:certificate/92887f51-ea40-418f-bd00-c6da4d3ec36d",
+            "bucket": "lazzaro-ongs-template-artifacts",
+            "lb_arn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff",
+            "nat_sg": "sg-00e933653a1ea7381",
+            "elb_sg": "sg-08dca709a29a55d95",
+            "account_id": "648410456371",
+            "repositoryName": "lazzaro-front-repo",
+            "r53HostedZoneId": "Z02368721HBX9HT236NI2",
+            "elbHostedZoneId": "Z215JYRZR1TBD5",
+            "dnsName": "lb-test-frontend-tf-137702013.eu-central-1.elb.amazonaws.com"
+          }
+        }
+      },
+      "DependsOn": [
+        "RemoveserviceLogGroup"
+      ]
+    },
+    "RemoveserviceLambdaVersionhZQiRsWsVHcIIoGybYDhdwnareaKoeXeSqJpIHl77s": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "RemoveserviceLambdaFunction"
+        },
+        "CodeSha256": "hDAU5A/XxNPz9xUX+kvTsO2NDNCSHb9Pz4MYvPOQEhA="
+      }
+    },
+    "S3BucketLazzaroongstemplateartifacts": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "lazzaro-ongs-template-artifacts",
+        "NotificationConfiguration": {
+          "LambdaConfigurations": [
+            {
+              "Event": "s3:ObjectCreated:Put",
+              "Function": {
+                "Fn::GetAtt": [
+                  "CreateserviceLambdaFunction",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "CreateserviceLambdaPermissionLazzaroongstemplateartifactsS3"
+      ]
+    },
+    "CreateserviceLambdaPermissionLazzaroongstemplateartifactsS3": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "CreateserviceLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "s3.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":s3:::lazzaro-ongs-template-artifacts"
+            ]
+          ]
+        },
+        "SourceAccount": {
+          "Ref": "AWS::AccountId"
+        }
+      }
+    },
+    "ApiGatewayRestApi": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "dev-frontend-ecs-services",
+        "EndpointConfiguration": {
+          "Types": [
+            "EDGE"
+          ]
+        },
+        "Policy": ""
+      }
+    },
+    "ApiGatewayResourceCreateclient": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "createclient",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceRemoveclient": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "removeclient",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayMethodCreateclientPost": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "POST",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceCreateclient"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "ClientLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      }
+    },
+    "ApiGatewayMethodRemoveclientDelete": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "DELETE",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceRemoveclient"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "ClientLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      }
+    },
+    "ApiGatewayDeployment1621452946552": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "StageName": "dev"
+      },
+      "DependsOn": [
+        "ApiGatewayMethodCreateclientPost",
+        "ApiGatewayMethodRemoveclientDelete"
+      ]
+    },
+    "ClientLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ClientLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "RemoveserviceEventSourceMappingDynamodbFrontendddbclient": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "DependsOn": [],
+      "Properties": {
+        "BatchSize": 10,
+        "EventSourceArn": "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "RemoveserviceLambdaFunction",
+            "Arn"
+          ]
+        },
+        "StartingPosition": "TRIM_HORIZON",
+        "Enabled": true
+      }
+    },
+    "FrontendCodeBuildServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "frontend-code-build-service-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "codebuild.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+          }
+        },
+        "Policies": [
+          {
+            "PolicyName": "frontend-code-build-inline-policy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutObject",
+                    "s3:GetObject",
+                    "s3:GetObjectVersion",
+                    "s3:ListBucket"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:BatchGetImage",
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:CompleteLayerUpload",
+                    "ecr:DescribeImages",
+                    "ecr:DescribeRepositories",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:InitiateLayerUpload",
+                    "ecr:ListImages",
+                    "ecr:PutImage",
+                    "ecr:UploadLayerPart"
+                  ],
+                  "Resource": "arn:aws:ecr:eu-central-1:648410456371:repository/lazzaro-front-repo"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:GetAuthorizationToken"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "secretsmanager:DescribeSecret",
+                    "secretsmanager:PutSecretValue",
+                    "secretsmanager:CreateSecret",
+                    "secretsmanager:DeleteSecret",
+                    "secretsmanager:CancelRotateSecret",
+                    "secretsmanager:ListSecretVersionIds",
+                    "secretsmanager:UpdateSecret",
+                    "secretsmanager:GetResourcePolicy",
+                    "secretsmanager:GetSecretValue",
+                    "secretsmanager:RestoreSecret",
+                    "secretsmanager:UpdateSecretVersionStage",
+                    "secretsmanager:RotateSecret"
+                  ],
+                  "Resource": "arn:aws:secretsmanager:eu-central-1:648410456371:secret:dockerToken-XYhC3a"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "BuildImageLambdaServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "frontend-client-gateway-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "lambda.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+          }
+        },
+        "Policies": [
+          {
+            "PolicyName": "cloudwatch-logs-config",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup"
+                  ],
+                  "Resource": "arn:aws:logs:eu-central-1:648410456371:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:PutLogEvents",
+                    "logs:CreateLogStream"
+                  ],
+                  "Resource": "arn:aws:logs:eu-central-1:648410456371:log-group:/aws/lambda/frontend-ecs-services-dev-client:*"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "start-build-process",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "codebuild:StartBuild"
+                  ],
+                  "Resource": "arn:aws:codebuild:eu-central-1:648410456371:project/frontend-code-build-service"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "permissions-for-ddb",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:PutItem",
+                    "dynamodb:DeleteItem"
+                  ],
+                  "Resource": "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "CreateLambdaServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "frontend-create-lambda-service-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "lambda.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+          }
+        },
+        "Policies": [
+          {
+            "PolicyName": "cloudwatch-logs-config",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup"
+                  ],
+                  "Resource": "arn:aws:logs:eu-central-1:648410456371:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:PutLogEvents",
+                    "logs:CreateLogStream"
+                  ],
+                  "Resource": "arn:aws:logs:eu-central-1:648410456371:log-group:/aws/lambda/frontend-ecs-services-dev-createservice:*"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "permissions-for-ddb",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:Scan",
+                    "dynamodb:Query",
+                    "dynamodb:UpdateItem"
+                  ],
+                  "Resource": "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "service-creation",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "elasticloadbalancing:CreateTargetGroup",
+                    "elasticloadbalancing:DescribeListeners",
+                    "elasticloadbalancing:CreateRule"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "elasticloadbalancing:CreateListener"
+                  ],
+                  "Resource": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:PassRole"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecs:RegisterTaskDefinition",
+                    "ecs:CreateService"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "route53:ChangeResourceRecordSets"
+                  ],
+                  "Resource": "arn:aws:route53:::hostedzone/Z02368721HBX9HT236NI2"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:CreateSecurityGroup",
+                    "ec2:AuthorizeSecurityGroupIngress"
+                  ],
+                  "Resource": [
+                    "arn:aws:ec2:eu-central-1:648410456371:security-group/*",
+                    "arn:aws:ec2:eu-central-1:648410456371:vpc/vpc-041e9a7015a49e342"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "DeleteLambdaServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "frontend-delete-lambda-service-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "lambda.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+          }
+        },
+        "Policies": [
+          {
+            "PolicyName": "cloudwatch-logs-config",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup"
+                  ],
+                  "Resource": "arn:aws:logs:eu-central-1:648410456371:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:PutLogEvents",
+                    "logs:CreateLogStream"
+                  ],
+                  "Resource": "arn:aws:logs:eu-central-1:648410456371:log-group:/aws/lambda/frontend-ecs-services-dev-removeservice:*"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "permissions-for-ddb-streams",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator",
+                    "dynamodb:DescribeStream"
+                  ],
+                  "Resource": "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:ListStreams"
+                  ],
+                  "Resource": "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "service-deletion",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:DeleteLogGroup"
+                  ],
+                  "Resource": "arn:aws:logs:eu-central-1:648410456371:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "elasticloadbalancing:DeleteTargetGroup",
+                    "ecs:DeregisterTaskDefinition",
+                    "ecs:DeleteService"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "elasticloadbalancing:DeleteListener"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "codebuild:BatchDeleteBuilds",
+                    "ecr:BatchDeleteImage",
+                    "s3:DeleteObject"
+                  ],
+                  "Resource": [
+                    "arn:aws:ecr:eu-central-1:648410456371:repository/lazzaro-front-repo",
+                    "arn:aws:codebuild:eu-central-1:648410456371:project/frontend-code-build-service",
+                    "arn:aws:s3:::lazzaro-ongs-template-artifacts/*"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "route53:ChangeResourceRecordSets"
+                  ],
+                  "Resource": "arn:aws:route53:::hostedzone/Z02368721HBX9HT236NI2"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "ServerlessDeploymentBucketName": {
+      "Value": {
+        "Ref": "ServerlessDeploymentBucket"
+      }
+    },
+    "ClientLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "ClientLambdaVersionkwKizwSt91QSkPexY5WPqDP03szSPEel0bZl9mTni8k"
+      }
+    },
+    "CreateserviceLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "CreateserviceLambdaVersionwDms2HKLaKUmT7O3aArjC9XRiYhohb7GQgX9Z14Ivw"
+      }
+    },
+    "RemoveserviceLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "RemoveserviceLambdaVersionhZQiRsWsVHcIIoGybYDhdwnareaKoeXeSqJpIHl77s"
+      }
+    },
+    "ServiceEndpoint": {
+      "Description": "URL of the service endpoint",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "ApiGatewayRestApi"
+            },
+            ".execute-api.",
+            {
+              "Ref": "AWS::Region"
+            },
+            ".",
+            {
+              "Ref": "AWS::URLSuffix"
+            },
+            "/dev"
+          ]
+        ]
+      }
+    }
+  }
+}

@@ -67,6 +67,7 @@ def createclient():
                     'Port': port_n,
                     'BuildId': build['build']['id'],
                     'ListenerArn': '',
+                    'RuleArn': '',
                     'TargetArn': '',
                     'TaskDefinitionArn': '',
                     'SecurityGroupId': ''

@@ -18,8 +18,6 @@ log_client = boto3.client('logs')
 r53_client = boto3.client('route53')
 table = dynamodb.Table('frontend-ddb-client')
 
-# def testing(client):
-
 def handle_service_creation(client):
     image=os.environ['image']+client
     containerName=os.environ['containerName']+client
@@ -67,9 +65,8 @@ def handle_service_creation(client):
         else:
             raise error
 
-
     logger.info("2. Creating Target Groups")
-    ## target groups --- ## stops here
+    ## target groups
     targetg = elb_client.create_target_group(
         Name=client, #dynamic name based on ngo
         Port=int(port),
@@ -85,63 +82,63 @@ def handle_service_creation(client):
     # if no listener has been found in the load balancer
     # then create a listener
     # this might require a lot of computation?
-    logger.info("X. Checking for a listener")
-    response = client.describe_listeners(
-        LoadBalancerArn='string',
-        ListenerArns=[
-            'string',
-        ],
-        Marker='string',
-        PageSize=123
-    )
-
-    logger.info("3. Creating Listener")
-    ## listener
-    listener = elb_client.create_listener(
+    logger.info("3. Checking for a listener")
+    ## checking for listener
+    describe_listener_response = elb_client.describe_listeners(
         LoadBalancerArn=os.environ['lb_arn'],
-        Protocol='HTTPS',
-        Port=443,
-        SslPolicy='ELBSecurityPolicy-2016-08',
-        Certificates=[
-            {
-                'CertificateArn': os.environ['certificateArn'],
-            },
-        ],
-        DefaultActions=[
-            {
-                'Type': 'forward',
-                'TargetGroupArn': target_arn,
-            },
-        ],
-        Tags=tags
     )
-    listener_arn = listener['Listeners'][0]['ListenerArn']
 
-    ## Testing component ##
-    rule_listener = elb_client.create_rule(
-        ListenerArn='string',
+    listener_arn = ''
+    if(len(describe_listener_response['Listeners']) < 1):
+        logger.info("3a. Creating Listener")
+        ## listener
+        listener = elb_client.create_listener(
+            LoadBalancerArn=os.environ['lb_arn'],
+            Protocol='HTTPS',
+            Port=443,
+            SslPolicy='ELBSecurityPolicy-2016-08',
+            Certificates=[
+                {
+                    'CertificateArn': os.environ['certificateArn'],
+                },
+            ],
+            DefaultActions=[
+                {
+                    'Type': 'forward',
+                    'TargetGroupArn': target_arn,
+                },
+            ],
+            Tags=tags
+        )
+        listener_arn = listener['Listeners'][0]['ListenerArn']
+    else:
+        ## assigning arn of the listener
+        listener_arn = describe_listener_response['Listeners'][0]['ListenerArn']
+    
+    # getting the count for the items in the table
+    ddb_item_count = ddb_client.scan(TableName='frontend-ddb-client')
+    
+    logger.info("4. Creating listener rule")
+    ## create listener rule
+    listener_rule = elb_client.create_rule(
+        ListenerArn=listener_arn,
         Conditions=[
             {
-                'Field': 'http-header',
-                'HttpHeaderConfig': {
-                    'HttpHeaderName': 'authority',
-                    'Values': [
-                        client+'.backend.lazzaro.io',
-                    ]
-                },
+                'Field': 'host-header',
+                'Values': [
+                    client+'.backend.lazzaro.io'
+                ]
             },
         ],
-        Priority=123,
+        Priority=ddb_item_count['Count']+1,
         Actions=[
             {
                 'Type': 'forward',
                 'TargetGroupArn': target_arn,
-                'Order': 123, # have to think about what to do with this
                 'ForwardConfig': {
                     'TargetGroups': [
                         {
                             'TargetGroupArn': target_arn,
-                            'Weight': 123 # have to think about what to do with this
                         },
                     ]
                 }
@@ -149,14 +146,22 @@ def handle_service_creation(client):
         ],
         Tags=tags
     )
-    ## Testing component ##
+    rule_arn = listener_rule['Rules'][0]['RuleArn']
 
-    logger.info("X. Creating Security Group")
-    response = sg_client.create_security_group(GroupName=client+'_sg',
-                                         Description='security group for client: '+client,
-                                         VpcId=os.environ['vpc_id'])
-    security_group_id = response['GroupId']
-
+    logger.info("5. Creating Security Group")
+    ## security group
+    create_sg = sg_client.create_security_group(
+        GroupName=client+'_sg',
+        Description='security group for client: '+client,
+        VpcId=os.environ['vpc_id'],
+        # TagSpecifications=[
+        #     {
+        #         'ResourceType': 'security-group',
+        #         'Tags': tags
+        #     },
+        # ]
+    )
+    security_group_id = create_sg['GroupId']
     sg_client.authorize_security_group_ingress(
         GroupId=security_group_id,
         IpPermissions=[
@@ -164,39 +169,39 @@ def handle_service_creation(client):
                 'IpProtocol': 'tcp',
                 'FromPort': 80,
                 'ToPort': 80,
-                'PrefixListIds': [
+                'UserIdGroupPairs': [
                     {
                         'Description': 'allowing ingress from nat',
-                        'PrefixListId': os.environ['nat_sg']
-                    }
+                        'GroupId': os.environ['nat_sg'],
+                    },
                 ]
             },
             {
                 'IpProtocol': 'tcp',
                 'FromPort': 443,
                 'ToPort': 443,
-                'PrefixListIds': [
+                'UserIdGroupPairs': [
                     {
                         'Description': 'allowing ingress from nat',
-                        'PrefixListId': os.environ['nat_sg']
-                    }
+                        'GroupId': os.environ['nat_sg'],
+                    },
                 ]
             },
             {
                 'IpProtocol': 'tcp',
-                'FromPort': port,
-                'ToPort': port,
-                'PrefixListIds': [
+                'FromPort': int(port),
+                'ToPort': int(port),
+                'UserIdGroupPairs': [
                     {
-                        'Description': 'allowing ingress from nat',
-                        'PrefixListId': os.environ['elb_sg']
-                    }
+                        'Description': 'allowing traffic from elb',
+                        'GroupId': os.environ['elb_sg'],
+                    },
                 ]
             },
         ]
     )
 
-    logger.info("4. Creating Task Definition")
+    logger.info("6. Creating Task Definition")
     ## task definition
     task_definition = ecs_client.register_task_definition(
         family='task_definition_'+client,
@@ -229,7 +234,7 @@ def handle_service_creation(client):
     )
     taskd_arn = task_definition['taskDefinition']['taskDefinitionArn']
 
-    logger.info("5. Creating Service")
+    logger.info("7. Creating Service")
     ## service
     try:
         ecs_client.create_service(
@@ -252,14 +257,12 @@ def handle_service_creation(client):
             ],
             networkConfiguration={
                 'awsvpcConfiguration': {
-                    'subnets': [ # might be hardcoded as well
+                    'subnets': [
                         os.environ['pub_subnet_a'],
                         os.environ['pub_subnet_b']
                     ],
-                    # for now this can be hardcoded, but it should probably be
-                    # segragated based on clients need
                     'securityGroups': [
-                        os.environ['service_sg'],
+                        security_group_id,
                     ],
                     'assignPublicIp': 'ENABLED'
                 }
@@ -286,7 +289,7 @@ def handle_service_creation(client):
         else:
             raise error
     
-    logger.info("6. Route53 Record Set")
+    logger.info("8. Route53 Record Set")
     ## record set
     r53_client.change_resource_record_sets(
         HostedZoneId=os.environ['r53HostedZoneId'],
@@ -309,7 +312,7 @@ def handle_service_creation(client):
         }
     )
 
-    logger.info("7. Updating Item in DDB table")
+    logger.info("9. Updating Item in DDB table")
     ## update item to include more attributes
     ddb_client.update_item(
         TableName='frontend-ddb-client',
@@ -318,16 +321,20 @@ def handle_service_creation(client):
                 'S': client,
             }
         },
-        UpdateExpression="SET ListenerArn = :LArn, TargetArn = :TArn, TaskDefinitionArn = :TDArn, SecurityGroupId = :SGId",
+        # UpdateExpression="SET ListenerArn = :LArn, TargetArn = :TArn, SecurityGroupId = :SGId",
+        UpdateExpression="SET ListenerArn = :LArn, RuleArn = :RArn, TargetArn = :TArn, TaskDefinitionArn = :TDArn, SecurityGroupId = :SGId",
         ExpressionAttributeValues={
             ':LArn': {
-                'S': listener_arn,
+                'S': listener_arn
+            },
+            ':RArn': {
+                'S': rule_arn
             },
             ':TArn': {
-                'S': target_arn,
+                'S': target_arn
             },
             ':TDArn': {
-                'S': taskd_arn,
+                'S': taskd_arn
             },
             ':SGId':{
                 'S': security_group_id

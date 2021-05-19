@@ -12,16 +12,18 @@ logger.setLevel(logging.INFO)
 log_client = boto3.client('logs')
 elb_client = boto3.client('elbv2')
 ecs_client = boto3.client('ecs')
+sg_client = boto3.client('ec2')
 s3_client = boto3.client('s3')
 ecr_client = boto3.client('ecr')
 codebuild_client = boto3.client('codebuild')
 r53_client = boto3.client('route53')
 
-def handling_service_deletion(client, listener_arn, target_arn, buildid, taskd_arn):
+# def handling_service_deletion(client, buildid):
+def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, security_group_id):
     logger.info('Handling service deletion')
 
     # delete
-    logger.info('1. Deleting Log Group')
+    # logger.info('1. Deleting Log Group')
     ## logs
     try: 
         log_client.delete_log_group(
@@ -33,10 +35,14 @@ def handling_service_deletion(client, listener_arn, target_arn, buildid, taskd_a
         else:
             raise error
 
-    logger.info('2. Deleting Listener')
-    ## listener
-    elb_client.delete_listener(
-        ListenerArn=listener_arn
+    logger.info('2. Deleting Listener Rule')
+    # listener rule
+    # delete rule ## 
+    # elb_client.delete_listener(
+    #     ListenerArn=listener_arn
+    # )
+    elb_client.delete_rule(
+        RuleArn=rule_arn
     )
 
     logger.info('3. Deleting Target Group')
@@ -60,7 +66,13 @@ def handling_service_deletion(client, listener_arn, target_arn, buildid, taskd_a
         taskDefinition=taskd_arn
     )
 
-    logger.info('6. Object Deletion from Bucket')
+    logger.info('6. Deleting Security Group')
+    ## security group
+    sg_client.delete_security_group(
+        GroupId=security_group_id
+    )
+
+    logger.info('7. Object Deletion from Bucket')
     ## s3 object
     s3_client.delete_object(
         Bucket=os.environ['bucket'],
@@ -68,7 +80,7 @@ def handling_service_deletion(client, listener_arn, target_arn, buildid, taskd_a
     )
     # logger.info(s3res)
 
-    logger.info('7. Deleting image from ECR')
+    logger.info('8. Deleting image from ECR')
     ## ecr image
     ecr_client.batch_delete_image(
         registryId=os.environ['account_id'],
@@ -81,7 +93,7 @@ def handling_service_deletion(client, listener_arn, target_arn, buildid, taskd_a
     )
     # logger.info(ecr_res)
 
-    logger.info('8. Deleting build')
+    logger.info('9. Deleting build')
     ## code build
     codebuild_client.batch_delete_builds(
         ids=[
@@ -90,8 +102,8 @@ def handling_service_deletion(client, listener_arn, target_arn, buildid, taskd_a
     )
     # logger.info(cb_res)
 
-    logger.info('9. Deleting Route 53 record')
-    ## record set
+    logger.info('10. Deleting Route 53 record')
+    # ## record set
     r53_client.change_resource_record_sets(
         HostedZoneId=os.environ['r53HostedZoneId'],
         ChangeBatch={
@@ -119,15 +131,17 @@ def handler(event, context):
     if(event['Records'][0]['eventName'] == "REMOVE"):
         logger.info(event['Records'][0])
         # declaration of variables
-        listener_arn = event['Records'][0]['dynamodb']['OldImage']['ListenerArn']['S']
+        rule_arn = event['Records'][0]['dynamodb']['OldImage']['RuleArn']['S']
         taskd_arn = event['Records'][0]['dynamodb']['OldImage']['TaskDefinitionArn']['S']
         target_arn = event['Records'][0]['dynamodb']['OldImage']['TargetArn']['S']
         buildid = event['Records'][0]['dynamodb']['OldImage']['BuildId']['S']
+        security_group_id = event['Records'][0]['dynamodb']['OldImage']['SecurityGroupId']['S']
         client = event['Records'][0]['dynamodb']['OldImage']['Client']['S']
-        print(listener_arn,target_arn,client)
+        # print(listener_arn,target_arn,client)
 
         # calling service deletion function
-        handling_service_deletion(client, listener_arn, target_arn, buildid, taskd_arn)
+        handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, security_group_id)
+        # handling_service_deletion(client, buildid)
     else:
         logger.info("Stream was not REMOVE")
         # logger.info("Stream was,: %s instead of REMOVED", event['Records'][0]['eventName'])

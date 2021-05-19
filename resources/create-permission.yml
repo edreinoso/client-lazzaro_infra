@@ -30,6 +30,7 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
+              - dynamodb:Scan
               - dynamodb:Query
               - dynamodb:UpdateItem
             Resource: "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client"
@@ -40,6 +41,8 @@ Resources:
           - Effect: Allow
             Action:
               - elasticloadbalancing:CreateTargetGroup
+              - elasticloadbalancing:DescribeListeners
+              - elasticloadbalancing:CreateRule
             Resource: "*"
           - Effect: Allow
             Action:
@@ -58,3 +61,10 @@ Resources:
             Action:
               - route53:ChangeResourceRecordSets
             Resource: "arn:aws:route53:::hostedzone/Z02368721HBX9HT236NI2"
+          - Effect: Allow
+            Action:
+              - ec2:CreateSecurityGroup
+              - ec2:AuthorizeSecurityGroupIngress
+            Resource: 
+              - "arn:aws:ec2:eu-central-1:648410456371:security-group/*"
+              - "arn:aws:ec2:eu-central-1:648410456371:vpc/vpc-041e9a7015a49e342"
