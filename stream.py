@@ -19,6 +19,7 @@ codebuild_client = boto3.client('codebuild')
 r53_client = boto3.client('route53')
 
 # def handling_service_deletion(client, buildid):
+# def handling_service_deletion(client, target_arn, buildid, taskd_arn, security_group_id):
 def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, security_group_id):
     logger.info('Handling service deletion')
 
@@ -31,7 +32,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
         )
     except botocore.exceptions.ClientError as error:
         if error.response['Error']['Code'] == 'ResourceNotFoundException':
-            logger.warn('Resource has been already deleted') # might have to check whether this is possible
+            logger.warn('Resource has been already deleted') 
         else:
             raise error
 
@@ -41,89 +42,136 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     # elb_client.delete_listener(
     #     ListenerArn=listener_arn
     # )
-    elb_client.delete_rule(
-        RuleArn=rule_arn
-    )
+    try:
+        elb_client.delete_rule(
+            RuleArn=rule_arn
+        )
+    except botocore.exceptions.ClientError as error:
+        raise error
 
     logger.info('3. Deleting Target Group')
     ## target groups
-    elb_client.delete_target_group(
-        TargetGroupArn=target_arn
-    )
+    try:
+        # 
+        elb_client.delete_target_group(
+            TargetGroupArn=target_arn
+        )
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'ValidationError':
+            logger.warn('A target group ARN must be specified') 
+        else:
+            raise error
 
     logger.info('4. Deleting Service')
     ## service
-    ecs_client.delete_service(
-        cluster=os.environ['cluster'],
-        service='service_'+client,
-        force=True
-    )
+    try:
+        ecs_client.delete_service(
+            cluster=os.environ['cluster'],
+            service='service_'+client,
+            force=True
+        )
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'ServiceNotFoundException':
+            logger.warn('Service not found') 
+        elif error.response['Error']['Code'] == 'InvalidParameterException':
+            logger.warn('Service must match ^[a-zA-Z0-9\-_]{1,255}$') 
+        else:
+            raise error
 
     logger.info('5. Deleting Task Definition')
     ## task definition
     ## might have to get the revision of the service (?)
-    ecs_client.deregister_task_definition(
-        taskDefinition=taskd_arn
-    )
+    try:
+        ecs_client.deregister_task_definition(
+            taskDefinition=taskd_arn
+        )
+        #
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'InvalidParameterException':
+            logger.warn('Task Definition can not be blank') 
+        else:
+            raise error
 
     logger.info('6. Deleting Security Group')
     ## security group
-    sg_client.delete_security_group(
-        GroupId=security_group_id
-    )
+    try:
+        sg_client.delete_security_group(
+            GroupId=security_group_id
+        )
+        #MissingParameter
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'MissingParameter':
+            logger.warn('The request must contain the parameter groupName or groupId') 
+        else:
+            raise error
 
     logger.info('7. Object Deletion from Bucket')
     ## s3 object
-    s3_client.delete_object(
-        Bucket=os.environ['bucket'],
-        Key='frontend-code-build-service/'+client+'.json'
-    )
-    # logger.info(s3res)
+    try:
+        s3_client.delete_object(
+            Bucket=os.environ['bucket'],
+            Key='frontend-code-build-service/'+client+'.json'
+        )
+        # logger.info(s3res)
+    except botocore.exceptions.ClientError as error:
+            raise error
 
     logger.info('8. Deleting image from ECR')
     ## ecr image
-    ecr_client.batch_delete_image(
-        registryId=os.environ['account_id'],
-        repositoryName=os.environ['repositoryName'],
-        imageIds=[
-            {
-                'imageTag': client
-            },
-        ]
-    )
-    # logger.info(ecr_res)
+    try:
+        ecr_client.batch_delete_image(
+            registryId=os.environ['account_id'],
+            repositoryName=os.environ['repositoryName'],
+            imageIds=[
+                {
+                    'imageTag': client
+                },
+            ]
+        )
+        # logger.info(ecr_res)
+    except botocore.exceptions.ClientError as error:
+            raise error
 
     logger.info('9. Deleting build')
     ## code build
-    codebuild_client.batch_delete_builds(
-        ids=[
-            buildid,
-        ]
-    )
-    # logger.info(cb_res)
+    try:
+        codebuild_client.batch_delete_builds(
+            ids=[
+                buildid,
+            ]
+        )
+        # logger.info(cb_res)
+    except botocore.exceptions.ClientError as error:
+            raise error
 
     logger.info('10. Deleting Route 53 record')
     # ## record set
-    r53_client.change_resource_record_sets(
-        HostedZoneId=os.environ['r53HostedZoneId'],
-        ChangeBatch={
-            'Comment': 'testing dns auto creation record',
-            'Changes': [
-                {
-                    'Action': 'DELETE',
-                    'ResourceRecordSet': {
-                        'Name': client+'.backend.lazzaro.io',
-                        'Type': 'A',
-                        'AliasTarget': {
-                            'HostedZoneId': os.environ['elbHostedZoneId'], # zone of the load balancer
-                            'DNSName': os.environ['dnsName'], # need dns of balancer
-                            'EvaluateTargetHealth': True
-                        },
-                    }
-                },
-            ]
-        }
-    )
+    try:
+        r53_client.change_resource_record_sets(
+            HostedZoneId=os.environ['r53HostedZoneId'],
+            ChangeBatch={
+                'Comment': 'testing dns auto creation record',
+                'Changes': [
+                    {
+                        'Action': 'DELETE',
+                        'ResourceRecordSet': {
+                            'Name': client+'.backend.lazzaro.io',
+                            'Type': 'A',
+                            'AliasTarget': {
+                                'HostedZoneId': os.environ['elbHostedZoneId'], # zone of the load balancer
+                                'DNSName': os.environ['dnsName'], # need dns of balancer
+                                'EvaluateTargetHealth': True
+                            },
+                        }
+                    },
+                ]
+            }
+        )
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'InvalidChangeBatch':
+            logger.warn('Record was not found') 
+        else:
+            raise error
 
 
 def handler(event, context):
@@ -140,6 +188,7 @@ def handler(event, context):
         # print(listener_arn,target_arn,client)
 
         # calling service deletion function
+        # handling_service_deletion(client, target_arn, buildid, taskd_arn, security_group_id)
         handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, security_group_id)
         # handling_service_deletion(client, buildid)
     else:

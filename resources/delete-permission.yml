@@ -55,6 +55,7 @@ Resources:
           - Effect: Allow
             Action:
               - elasticloadbalancing:DeleteListener
+              - elasticloadbalancing:DeleteRule
             Resource: "*"
           - Effect: Allow
             Action:
@@ -69,3 +70,9 @@ Resources:
             Action:
               - route53:ChangeResourceRecordSets
             Resource: "arn:aws:route53:::hostedzone/Z02368721HBX9HT236NI2"
+          - Effect: Allow
+            Action:
+              - ec2:DeleteSecurityGroup
+            Resource: 
+              - "arn:aws:ec2:eu-central-1:648410456371:security-group/*"
+              - "arn:aws:ec2:eu-central-1:648410456371:vpc/vpc-041e9a7015a49e342"
