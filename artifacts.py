@@ -299,7 +299,7 @@ def handle_service_creation(client):
                 {
                     'Action': 'CREATE',
                     'ResourceRecordSet': {
-                        'Name': client+'.backend.lazzaro.io',
+                        'Name': client+'.web.lazzaro.io',
                         'Type': 'A',
                         'AliasTarget': {
                             'HostedZoneId': os.environ['elbHostedZoneId'], # zone of the load balancer
