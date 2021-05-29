@@ -18,9 +18,10 @@ log_client = boto3.client('logs')
 r53_client = boto3.client('route53')
 table = dynamodb.Table('frontend-ddb-client')
 
+
 def handle_service_creation(client):
-    image=os.environ['image']+client
-    containerName=os.environ['containerName']+client
+    image = os.environ['image']+client
+    containerName = os.environ['containerName']+client
 
     # get stuff from dynamodb
     query = table.query(
@@ -34,22 +35,22 @@ def handle_service_creation(client):
     # tags
     # is this allowed?
     tags = [
-            {
+        {
                 'Key': 'Name',
                 'Value': client
             },
-            {
+        {
                 'Key': 'Port',
                 'Value': port
             },
-            {
+        {
                 'Key': 'Date',
                 'Value': date
             },
-        ]
+    ]
 
     # create
-    ## logs
+    # logs
     try:
         logger.info("1. Creating CloudWatch Logs")
         log_client.create_log_group(
@@ -61,17 +62,18 @@ def handle_service_creation(client):
         )
     except botocore.exceptions.ClientError as error:
         if error.response['Error']['Code'] == 'ResourceAlreadyExistsException':
-            logger.warn('Skipping this portion, cloudwatch logs already exist!')
+            logger.warn(
+                'Skipping this portion, cloudwatch logs already exist!')
         else:
             raise error
 
     logger.info("2. Creating Target Groups")
-    ## target groups
+    # target groups
     targetg = elb_client.create_target_group(
-        Name=client, #dynamic name based on ngo
+        Name=client,  # dynamic name based on ngo
         Port=int(port),
-        VpcId=os.environ['vpc_id'],#this could probably be hardcoded
-        Protocol='HTTP',#this could possibly be dynamic
+        VpcId=os.environ['vpc_id'],  # this could probably be hardcoded
+        Protocol='HTTP',  # this could possibly be dynamic
         HealthCheckPath='/healthcheck',
         HealthCheckPort=port,
         TargetType='ip',
@@ -83,7 +85,7 @@ def handle_service_creation(client):
     # then create a listener
     # this might require a lot of computation?
     logger.info("3. Checking for a listener")
-    ## checking for listener
+    # checking for listener
     describe_listener_response = elb_client.describe_listeners(
         LoadBalancerArn=os.environ['lb_arn'],
     )
@@ -91,7 +93,7 @@ def handle_service_creation(client):
     listener_arn = ''
     if(len(describe_listener_response['Listeners']) < 1):
         logger.info("3a. Creating Listener")
-        ## listener
+        # listener
         listener = elb_client.create_listener(
             LoadBalancerArn=os.environ['lb_arn'],
             Protocol='HTTPS',
@@ -112,14 +114,16 @@ def handle_service_creation(client):
         )
         listener_arn = listener['Listeners'][0]['ListenerArn']
     else:
-        ## assigning arn of the listener
+        # assigning arn of the listener
         listener_arn = describe_listener_response['Listeners'][0]['ListenerArn']
-    
+
     # getting the count for the items in the table
     ddb_item_count = ddb_client.scan(TableName='frontend-ddb-client')
-    
+    print('items: ', ddb_item_count)
+    print('item count: ', ddb_item_count['Count'])
+
     logger.info("4. Creating listener rule")
-    ## create listener rule
+    # create listener rule
     listener_rule = elb_client.create_rule(
         ListenerArn=listener_arn,
         Conditions=[
@@ -149,7 +153,7 @@ def handle_service_creation(client):
     rule_arn = listener_rule['Rules'][0]['RuleArn']
 
     logger.info("5. Creating Security Group")
-    ## security group
+    # security group
     create_sg = sg_client.create_security_group(
         GroupName=client+'_sg',
         Description='security group for client: '+client,
@@ -202,7 +206,7 @@ def handle_service_creation(client):
     )
 
     logger.info("6. Creating Task Definition")
-    ## task definition
+    # task definition
     task_definition = ecs_client.register_task_definition(
         family='task_definition_'+client,
         executionRoleArn=os.environ['role'],
@@ -213,7 +217,8 @@ def handle_service_creation(client):
                 'image': image,
                 'portMappings': [
                     {
-                        'containerPort': int(port), # dynamic from dynamodb
+                        # dynamic from dynamodb
+                        'containerPort': int(port),
                     },
                 ],
                 'logConfiguration': {
@@ -235,7 +240,7 @@ def handle_service_creation(client):
     taskd_arn = task_definition['taskDefinition']['taskDefinitionArn']
 
     logger.info("7. Creating Service")
-    ## service
+    # service
     try:
         ecs_client.create_service(
             cluster=os.environ['cluster'],
@@ -243,7 +248,7 @@ def handle_service_creation(client):
             taskDefinition='task_definition_'+client,
             loadBalancers=[
                 {
-                    'targetGroupArn': target_arn, # arn of target group
+                    'targetGroupArn': target_arn,  # arn of target group
                     'containerName': containerName,
                     'containerPort': int(port)
                 },
@@ -285,12 +290,12 @@ def handle_service_creation(client):
         )
     except botocore.exceptions.ClientError as error:
         if error.response['Error']['Code'] == 'InvalidParameterException':
-            logger.warn('Service already existing') # might have to check whether this is possible
+            logger.warn('Service already existing')  # might have to check whether this is possible
         else:
             raise error
-    
+
     logger.info("8. Route53 Record Set")
-    ## record set
+    # record set
     r53_client.change_resource_record_sets(
         HostedZoneId=os.environ['r53HostedZoneId'],
         ChangeBatch={
@@ -302,8 +307,8 @@ def handle_service_creation(client):
                         'Name': client+'.web.lazzaro.io',
                         'Type': 'A',
                         'AliasTarget': {
-                            'HostedZoneId': os.environ['elbHostedZoneId'], # zone of the load balancer
-                            'DNSName': os.environ['dnsName'], # need dns of balancer
+                            'HostedZoneId': os.environ['elbHostedZoneId'],  # zone of the load balancer
+                            'DNSName': os.environ['dnsName'],  # need dns of balancer
                             'EvaluateTargetHealth': True
                         },
                     }
@@ -313,7 +318,7 @@ def handle_service_creation(client):
     )
 
     logger.info("9. Updating Item in DDB table")
-    ## update item to include more attributes
+    # update item to include more attributes
     ddb_client.update_item(
         TableName='frontend-ddb-client',
         Key={
@@ -336,11 +341,12 @@ def handle_service_creation(client):
             ':TDArn': {
                 'S': taskd_arn
             },
-            ':SGId':{
+            ':SGId': {
                 'S': security_group_id
             }
         }
     )
+
 
 def handler(event, context):
     # getting client from s3 event
@@ -348,8 +354,9 @@ def handler(event, context):
     obj = key.split('/')[1]
     client = obj.split('.')[0]
 
+    print("Client: ", client)
     handle_service_creation(client)
-    
+
     return {
         'statusCode': 200,
         'body': json.dumps('Function triggred by S3!')

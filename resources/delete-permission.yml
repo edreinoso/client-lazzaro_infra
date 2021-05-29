@@ -69,7 +69,7 @@ Resources:
           - Effect: Allow
             Action:
               - route53:ChangeResourceRecordSets
-            Resource: "arn:aws:route53:::hostedzone/Z02368721HBX9HT236NI2"
+            Resource: "arn:aws:route53:::hostedzone/Z05961833L2QBW4GTOR3X"
           - Effect: Allow
             Action:
               - ec2:DeleteSecurityGroup
