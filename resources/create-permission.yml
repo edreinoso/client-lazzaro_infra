@@ -23,7 +23,9 @@ Resources:
             Action:
               - logs:PutLogEvents
               - logs:CreateLogStream
-            Resource: "arn:aws:logs:eu-central-1:648410456371:log-group:/aws/lambda/frontend-ecs-services-dev-createservice:*"
+            Resource: 
+              - "arn:aws:logs:eu-central-1:648410456371:log-group:/aws/lambda/frontend-ecs-services-dev-createservice:*"
+              - "arn:aws:logs:eu-central-1:648410456371:log-group:/aws/lambda/frontend-ecs-services-dev-testservice:*"
       - PolicyName: "permissions-for-ddb"
         PolicyDocument:
           Version: "2012-10-17"
@@ -42,6 +44,7 @@ Resources:
             Action:
               - elasticloadbalancing:CreateTargetGroup
               - elasticloadbalancing:DescribeListeners
+              - elasticloadbalancing:DescribeRules
               - elasticloadbalancing:CreateRule
             Resource: "*"
           - Effect: Allow
@@ -68,3 +71,17 @@ Resources:
             Resource: 
               - "arn:aws:ec2:eu-central-1:648410456371:security-group/*"
               - "arn:aws:ec2:eu-central-1:648410456371:vpc/vpc-041e9a7015a49e342"
+      - PolicyName: "test-deploy"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:DescribeStream
+            Resource: "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502"
+          - Effect: Allow
+            Action:
+              - dynamodb:ListStreams
+            Resource: "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client"

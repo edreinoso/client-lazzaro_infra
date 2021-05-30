@@ -1,5 +1,5 @@
-import json
 import os
+import json
 import boto3
 import botocore
 from boto3.dynamodb.conditions import Key
@@ -117,21 +117,17 @@ def handle_service_creation(client):
         # assigning arn of the listener
         listener_arn = describe_listener_response['Listeners'][0]['ListenerArn']
 
-    # getting the count for the items in the table
-    ddb_item_count = ddb_client.scan(TableName='frontend-ddb-client')
-    # print('items: ', ddb_item_count)
-    # print('item count: ', ddb_item_count['Count'])
-
-    # need to read from load balancer listener
     # need to get the number of listeners
     # just add one more on top of the latest that
     # the highest priority
-    response = client.describe_rules(
+    rules = elb_client.describe_rules(
         # this is gonna have to be dynamic
-        ListenerArn=os.environ['listener_arn'],
+        ListenerArn=listener_arn,
     )
 
     logger.info("4. Creating Listener Rule")
+    print('rule number: ', int(rules['Rules']
+          [len(rules['Rules'])-2]['Priority'])+1)
     # create listener rule
     listener_rule = elb_client.create_rule(
         ListenerArn=listener_arn,
@@ -143,7 +139,7 @@ def handle_service_creation(client):
                 ]
             },
         ],
-        Priority=ddb_item_count['Count']+1,
+        Priority=int(rules['Rules'][len(rules['Rules'])-2]['Priority'])+1,
         Actions=[
             {
                 'Type': 'forward',
@@ -314,28 +310,36 @@ def handle_service_creation(client):
 
     logger.info("8. Route53 Record Set")
     # record set
-    r53_client.change_resource_record_sets(
-        HostedZoneId=os.environ['r53HostedZoneId'],
-        ChangeBatch={
-            'Comment': 'testing dns auto creation record',
-            'Changes': [
-                {
-                    'Action': 'CREATE',
-                    'ResourceRecordSet': {
-                        'Name': client+'.web.lazzaro.io',
-                        'Type': 'A',
-                        'AliasTarget': {
-                            # zone of the load balancer
-                            'HostedZoneId': os.environ['elbHostedZoneId'],
-                            # need dns of balancer
-                            'DNSName': os.environ['dnsName'],
-                            'EvaluateTargetHealth': True
-                        },
-                    }
-                },
-            ]
-        }
-    )
+    try:
+        r53_client.change_resource_record_sets(
+            HostedZoneId=os.environ['r53HostedZoneId'],
+            ChangeBatch={
+                'Comment': 'testing dns auto creation record',
+                'Changes': [
+                    {
+                        'Action': 'CREATE',
+                        'ResourceRecordSet': {
+                            'Name': client+'.web.lazzaro.io',
+                            'Type': 'A',
+                            'AliasTarget': {
+                                # zone of the load balancer
+                                'HostedZoneId': os.environ['elbHostedZoneId'],
+                                # need dns of balancer
+                                'DNSName': os.environ['dnsName'],
+                                'EvaluateTargetHealth': True
+                            },
+                        }
+                    },
+                ]
+            }
+        )
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'InvalidChangeBatch':
+            # might have to check whether this is possible
+            logger.warn('Record set already exists')
+        else:
+            raise error
+    # 
 
     logger.info("9. Updating Item in DDB table")
     # update item to include more attributes

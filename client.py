@@ -21,6 +21,38 @@ regex_string = '^[a-zA-Z]{3,}$'  # would probably have to change
 def isValidString(string):
     return re.match(regex_string, string)
 
+def build_process(port_n, name, parsedTime):
+    build = codebuild_client.start_build(
+        projectName='frontend-code-build-service',
+        environmentVariablesOverride=[
+            {
+                'name': 'port',
+                'value': port_n,
+            },
+            {
+                'name': 'ong_name',
+                'value': name,
+            },
+            {
+                'name': 'date',
+                'value': parsedTime
+            },
+            {
+                "name": "aws_account_id",
+                "value": "648410456371"
+            },
+            {
+                "name": "aws_default_region",
+                "value": "eu-central-1"
+            },
+            {
+                "name": "username",
+                "value": "edreinoso23"
+            }
+        ],
+    )
+    return build
+
 @app.route("/createclient", methods=['POST'])
 def createclient():
     # time
@@ -35,35 +67,7 @@ def createclient():
     # certain parameters 
     if isValidString(name):
         logger.info("Starting Build process")
-        build = codebuild_client.start_build(
-            projectName='frontend-code-build-service',
-            environmentVariablesOverride=[
-                {
-                    'name': 'port',
-                    'value': port_n,
-                },
-                {
-                    'name': 'ong_name',
-                    'value': name,
-                },
-                {
-                    'name': 'date',
-                    'value': parsedTime
-                },
-                {
-                    "name": "aws_account_id",
-                    "value": "648410456371"
-                },
-                {
-                    "name": "aws_default_region",
-                    "value": "eu-central-1"
-                },
-                {
-                    "name": "username",
-                    "value": "edreinoso23"
-                }
-            ],
-        )
+        build = build_process(port_n, name, parsedTime)
 
         # dynamodb module
         logger.info("Putting dynamodb item")
@@ -123,9 +127,8 @@ def removeclient():
         except botocore.exceptions.ClientError as error:
             if error.response['Error']['Code'] == 'ConditionalCheckFailedException':
                 # might have to check whether this is possible
-                logger.warn('Client was not found in table')
-                res = Response("Client removed successfully",
-                            status=200, mimetype='application/json')
+                res = Response("Client was not found",
+                            status=400, mimetype='application/json')
                 return res
             else:
                 raise error

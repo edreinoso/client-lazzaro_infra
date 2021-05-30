@@ -45,7 +45,10 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
             RuleArn=rule_arn
         )
     except botocore.exceptions.ClientError as error:
-        raise error
+        if error.response['Error']['Code'] == 'ValidationError':
+            logger.warn('A listener rule ARN must be specified')
+        else:
+            raise error
 
     logger.info('3. Deleting Target Group')
     # target groups
@@ -127,7 +130,11 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
         )
         # logger.info(cb_res)
     except botocore.exceptions.ClientError as error:
-        raise error
+        if error.response['Error']['Code'] == 'InvalidInputException':
+            # InvalidInputException
+            logger.warn('Invalid input operation')
+        else:
+            raise error
 
     logger.info('9. Deleting Route 53 record')
     # record set

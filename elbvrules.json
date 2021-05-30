@@ -71,8 +71,43 @@
             "IsDefault": false
         },
         {
-            "RuleArn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:listener-rule/app/lb-prod-frontend/2c8d61deb8fe2564/a0731935f6523a49/5ad730952832cb6f",
-            "Priority": "5",
+            "RuleArn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:listener-rule/app/lb-prod-frontend/2c8d61deb8fe2564/a0731935f6523a49/f75a40023e4a6309",
+            "Priority": "6",
+            "Conditions": [
+                {
+                    "Field": "host-header",
+                    "Values": [
+                        "ivansaiz.web.lazzaro.io"
+                    ],
+                    "HostHeaderConfig": {
+                        "Values": [
+                            "ivansaiz.web.lazzaro.io"
+                        ]
+                    }
+                }
+            ],
+            "Actions": [
+                {
+                    "Type": "forward",
+                    "TargetGroupArn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:targetgroup/ivansaiz/b268b209c61f0e7b",
+                    "ForwardConfig": {
+                        "TargetGroups": [
+                            {
+                                "TargetGroupArn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:targetgroup/ivansaiz/b268b209c61f0e7b",
+                                "Weight": 1
+                            }
+                        ],
+                        "TargetGroupStickinessConfig": {
+                            "Enabled": false
+                        }
+                    }
+                }
+            ],
+            "IsDefault": false
+        },
+        {
+            "RuleArn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:listener-rule/app/lb-prod-frontend/2c8d61deb8fe2564/a0731935f6523a49/2ee922c903af4356",
+            "Priority": "7",
             "Conditions": [
                 {
                     "Field": "host-header",
@@ -89,11 +124,11 @@
             "Actions": [
                 {
                     "Type": "forward",
-                    "TargetGroupArn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:targetgroup/pruebanueva/ea0ee47d32e8791f",
+                    "TargetGroupArn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:targetgroup/pruebanueva/5900983db5fdc86d",
                     "ForwardConfig": {
                         "TargetGroups": [
                             {
-                                "TargetGroupArn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:targetgroup/pruebanueva/ea0ee47d32e8791f",
+                                "TargetGroupArn": "arn:aws:elasticloadbalancing:eu-central-1:648410456371:targetgroup/pruebanueva/5900983db5fdc86d",
                                 "Weight": 1
                             }
                         ],
