@@ -47,7 +47,7 @@ Resources:
           - Effect: Allow
             Action:
               - elasticloadbalancing:CreateListener
-            Resource: "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-test-frontend-tf/719baf42afe40dff"
+            Resource: "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/lb-prod-frontend/2c8d61deb8fe2564"
           - Effect: Allow
             Action:
               - iam:PassRole
@@ -60,7 +60,7 @@ Resources:
           - Effect: Allow
             Action:
               - route53:ChangeResourceRecordSets
-            Resource: "arn:aws:route53:::hostedzone/Z02368721HBX9HT236NI2"
+            Resource: "arn:aws:route53:::hostedzone/Z05961833L2QBW4GTOR3X"
           - Effect: Allow
             Action:
               - ec2:CreateSecurityGroup

@@ -40,6 +40,9 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
 
     logger.info('2. Deleting Listener Rule')
     # listener rule
+    # elb_client.delete_listener(
+    #     ListenerArn=listener_arn
+    # )
     try:
         elb_client.delete_rule(
             RuleArn=rule_arn

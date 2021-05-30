@@ -36,17 +36,17 @@ def handle_service_creation(client):
     # is this allowed?
     tags = [
         {
-                'Key': 'Name',
-                'Value': client
-            },
+            'Key': 'Name',
+            'Value': client
+        },
         {
-                'Key': 'Port',
-                'Value': port
-            },
+            'Key': 'Port',
+            'Value': port
+        },
         {
-                'Key': 'Date',
-                'Value': date
-            },
+            'Key': 'Date',
+            'Value': date
+        },
     ]
 
     # create
@@ -84,7 +84,7 @@ def handle_service_creation(client):
     # if no listener has been found in the load balancer
     # then create a listener
     # this might require a lot of computation?
-    logger.info("3. Checking for a listener")
+    logger.info("3. Checking to see if there's a Listener")
     # checking for listener
     describe_listener_response = elb_client.describe_listeners(
         LoadBalancerArn=os.environ['lb_arn'],
@@ -119,10 +119,19 @@ def handle_service_creation(client):
 
     # getting the count for the items in the table
     ddb_item_count = ddb_client.scan(TableName='frontend-ddb-client')
-    print('items: ', ddb_item_count)
-    print('item count: ', ddb_item_count['Count'])
+    # print('items: ', ddb_item_count)
+    # print('item count: ', ddb_item_count['Count'])
 
-    logger.info("4. Creating listener rule")
+    # need to read from load balancer listener
+    # need to get the number of listeners
+    # just add one more on top of the latest that
+    # the highest priority
+    response = client.describe_rules(
+        # this is gonna have to be dynamic
+        ListenerArn=os.environ['listener_arn'],
+    )
+
+    logger.info("4. Creating Listener Rule")
     # create listener rule
     listener_rule = elb_client.create_rule(
         ListenerArn=listener_arn,
@@ -130,7 +139,7 @@ def handle_service_creation(client):
             {
                 'Field': 'host-header',
                 'Values': [
-                    client+'.backend.lazzaro.io'
+                    client+'.web.lazzaro.io'
                 ]
             },
         ],
@@ -153,57 +162,65 @@ def handle_service_creation(client):
     rule_arn = listener_rule['Rules'][0]['RuleArn']
 
     logger.info("5. Creating Security Group")
+    sg_id = ''
     # security group
-    create_sg = sg_client.create_security_group(
-        GroupName=client+'_sg',
-        Description='security group for client: '+client,
-        VpcId=os.environ['vpc_id'],
-        # TagSpecifications=[
-        #     {
-        #         'ResourceType': 'security-group',
-        #         'Tags': tags
-        #     },
-        # ]
-    )
-    security_group_id = create_sg['GroupId']
-    sg_client.authorize_security_group_ingress(
-        GroupId=security_group_id,
-        IpPermissions=[
-            {
-                'IpProtocol': 'tcp',
-                'FromPort': 80,
-                'ToPort': 80,
-                'UserIdGroupPairs': [
-                    {
-                        'Description': 'allowing ingress from nat',
-                        'GroupId': os.environ['nat_sg'],
-                    },
-                ]
-            },
-            {
-                'IpProtocol': 'tcp',
-                'FromPort': 443,
-                'ToPort': 443,
-                'UserIdGroupPairs': [
-                    {
-                        'Description': 'allowing ingress from nat',
-                        'GroupId': os.environ['nat_sg'],
-                    },
-                ]
-            },
-            {
-                'IpProtocol': 'tcp',
-                'FromPort': int(port),
-                'ToPort': int(port),
-                'UserIdGroupPairs': [
-                    {
-                        'Description': 'allowing traffic from elb',
-                        'GroupId': os.environ['elb_sg'],
-                    },
-                ]
-            },
-        ]
-    )
+    try:
+        create_sg = sg_client.create_security_group(
+            GroupName=client+'_sg',
+            Description='security group for client: '+client,
+            VpcId=os.environ['vpc_id'],
+            # TagSpecifications=[
+            #     {
+            #         'ResourceType': 'security-group',
+            #         'Tags': tags
+            #     },
+            # ]
+        )
+        sg_id = create_sg['GroupId']
+        sg_client.authorize_security_group_ingress(
+            GroupId=sg_id,
+            IpPermissions=[
+                {
+                    'IpProtocol': 'tcp',
+                    'FromPort': 80,
+                    'ToPort': 80,
+                    'UserIdGroupPairs': [
+                        {
+                            'Description': 'allowing ingress from nat',
+                            'GroupId': os.environ['nat_sg'],
+                        },
+                    ]
+                },
+                {
+                    'IpProtocol': 'tcp',
+                    'FromPort': 443,
+                    'ToPort': 443,
+                    'UserIdGroupPairs': [
+                        {
+                            'Description': 'allowing ingress from nat',
+                            'GroupId': os.environ['nat_sg'],
+                        },
+                    ]
+                },
+                {
+                    'IpProtocol': 'tcp',
+                    'FromPort': int(port),
+                    'ToPort': int(port),
+                    'UserIdGroupPairs': [
+                        {
+                            'Description': 'allowing traffic from elb',
+                            'GroupId': os.environ['elb_sg'],
+                        },
+                    ]
+                },
+            ]
+        )
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'InvalidGroup.Duplicate':
+            logger.warn(
+                'Skipping this portion, security group already exist!')
+        else:
+            raise error
 
     logger.info("6. Creating Task Definition")
     # task definition
@@ -267,7 +284,7 @@ def handle_service_creation(client):
                         os.environ['pub_subnet_b']
                     ],
                     'securityGroups': [
-                        security_group_id,
+                        sg_id,
                     ],
                     'assignPublicIp': 'ENABLED'
                 }
@@ -290,7 +307,8 @@ def handle_service_creation(client):
         )
     except botocore.exceptions.ClientError as error:
         if error.response['Error']['Code'] == 'InvalidParameterException':
-            logger.warn('Service already existing')  # might have to check whether this is possible
+            # might have to check whether this is possible
+            logger.warn('Service already existing')
         else:
             raise error
 
@@ -307,8 +325,10 @@ def handle_service_creation(client):
                         'Name': client+'.web.lazzaro.io',
                         'Type': 'A',
                         'AliasTarget': {
-                            'HostedZoneId': os.environ['elbHostedZoneId'],  # zone of the load balancer
-                            'DNSName': os.environ['dnsName'],  # need dns of balancer
+                            # zone of the load balancer
+                            'HostedZoneId': os.environ['elbHostedZoneId'],
+                            # need dns of balancer
+                            'DNSName': os.environ['dnsName'],
                             'EvaluateTargetHealth': True
                         },
                     }
@@ -342,7 +362,7 @@ def handle_service_creation(client):
                 'S': taskd_arn
             },
             ':SGId': {
-                'S': security_group_id
+                'S': sg_id
             }
         }
     )
