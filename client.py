@@ -14,7 +14,7 @@ app = Flask(__name__)
 codebuild_client = boto3.client('codebuild')
 dynamodb = boto3.resource('dynamodb', region_name='eu-central-1')
 ddb_client = boto3.client('dynamodb')
-table = dynamodb.Table('frontend-ddb-client')
+table = dynamodb.Table(os.environ['ddbTable'])
 # validating string
 regex_string = '^[a-zA-Z]{3,}$'  # would probably have to change
 
@@ -53,46 +53,92 @@ def build_process(port_n, name, parsedTime):
     )
     return build
 
+def readingFromDDBTable(name):
+    # query dynamodb table for the item
+    logger.info("Reading from table")
+    res = ddb_client.query(
+        TableName=os.environ['ddbTable'],
+        KeyConditionExpression='#Client = :Client',
+        ExpressionAttributeNames={
+            '#Client': 'Client'
+        },
+        ExpressionAttributeValues={
+            ':Client': {
+                'S': name,
+            }
+        }
+    )
+    return res
+
 @app.route("/createclient", methods=['POST'])
 def createclient():
     # time
     currentTime = ""
     currentTime = datetime.utcnow()
     parsedTime = str(currentTime.strftime("%Y-%m-%dT%H:%M:%SZ"))
-
+    areThereItems = False
     name=request.json.get('name')
     port_n=request.json.get('port')
     
     # should probably return an error if a certain string is not within
     # certain parameters 
     if isValidString(name):
-        logger.info("Starting Build process")
-        build = build_process(port_n, name, parsedTime)
+        ddbQuery = readingFromDDBTable(name)
+        if (ddbQuery['Count'] == 0):
+            areThereItems = True
+        
+        print(areThereItems)
+        # logger.info("Starting Build process")
+        # build = build_process(port_n, name, parsedTime)
 
-        # dynamodb module
-        logger.info("Putting dynamodb item")
-        try:
-            table.put_item(
-                    Item={
-                        'Client': name,
-                        'Date': parsedTime,
-                        'Port': port_n,
-                        'BuildId': build['build']['id'],
-                        'ListenerArn': '',
-                        'RuleArn': '',
-                        'TargetArn': '',
-                        'TaskDefinitionArn': '',
-                        'SecurityGroupId': ''
-                    },
-                    ConditionExpression='attribute_not_exists(Client)',
-                )
-        except botocore.exceptions.ClientError as error:
-            if error.response['Error']['Code'] == 'ConditionalCheckFailedException':
-                res = Response("Client already exists",
-                            status=400, mimetype='application/json')
-                return res
-            else:
-                raise error
+        # try:
+        #     # Putting item in dynamodb table
+        #     logger.info("Putting dynamodb item")
+        #     hello = table.put_item(
+        #             Item={
+        #                 'Client': name,
+        #                 'Date': parsedTime,
+        #                 'Port': port_n,
+        #                 'BuildId': '',
+        #                 'ListenerArn': '',
+        #                 'RuleArn': '',
+        #                 'TargetArn': '',
+        #                 'TaskDefinitionArn': '',
+        #                 'SecurityGroupId': ''
+        #             },
+        #             ConditionExpression='attribute_not_exists(Client)',
+        #         )
+        #     print('response from ddb: ', hello)
+
+        #     # Starting the build id
+        #     logger.info("Starting Build process")
+        #     build = build_process(port_n, name, parsedTime)
+            
+        #     print('this is name: ',name)
+
+        #     # Updating the BuildId
+        #     table.update_item(
+        #         TableName='frontend-ddb-client',
+        #         Key={
+        #             'Client': {
+        #                 'S': name,
+        #             }
+        #         },
+        #         # UpdateExpression="SET ListenerArn = :LArn, TargetArn = :TArn, SecurityGroupId = :SGId",
+        #         UpdateExpression="SET BuildId = :BId",
+        #         ExpressionAttributeValues={
+        #             ':BId': {
+        #                 'S': build['build']['id']
+        #             },
+        #         }
+        #     )
+        # except botocore.exceptions.ClientError as error:
+            # if error.response['Error']['Code'] == 'ConditionalCheckFailedException':
+            #     res = Response("Client already exists",
+            #                 status=400, mimetype='application/json')
+            #     return res
+            # else:
+            #     raise error
         
         res = Response("Client added successfully",
                        status=200, mimetype='application/json')

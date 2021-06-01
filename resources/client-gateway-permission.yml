@@ -40,4 +40,6 @@ Resources:
               Action:
                 - dynamodb:PutItem
                 - dynamodb:DeleteItem
+                - dynamodb:UpdateItem
+                - dynamodb:Query
               Resource: "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client"

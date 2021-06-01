@@ -213,10 +213,45 @@ def handle_service_creation(client):
         )
     except botocore.exceptions.ClientError as error:
         if error.response['Error']['Code'] == 'InvalidGroup.Duplicate':
-            logger.warn(
-                'Skipping this portion, security group already exist!')
+            response = sg_client.describe_security_groups(
+                Filters=[
+                    {
+                        'Name': 'group-name',
+                        'Values': [
+                            client+'_sg',
+                        ]
+                    },
+                ],
+            )
+            print(response)
+            sg_id = response['SecurityGroups'][0]['GroupId']
+            try:
+                sg_client.authorize_security_group_ingress(
+                    GroupId=sg_id,
+                    IpPermissions=[
+                        {
+                            'IpProtocol': 'tcp',
+                            'FromPort': int(port),
+                            'ToPort': int(port),
+                            'UserIdGroupPairs': [
+                                {
+                                    'Description': 'allowing traffic from elb',
+                                    'GroupId': os.environ['elb_sg'],
+                                },
+                            ]
+                        },
+                    ]
+                )
+            except botocore.exceptions.ClientError as error:
+                if error.response['Error']['Code'] == 'InvalidPermission.Duplicate':
+                    logger.warn('Security group rule already exist!')
+                else:
+                    raise error
+            logger.warn('Skipping this portion, security group already exist!')
         else:
             raise error
+
+    print(sg_id)
 
     logger.info("6. Creating Task Definition")
     # task definition
@@ -339,7 +374,7 @@ def handle_service_creation(client):
             logger.warn('Record set already exists')
         else:
             raise error
-    # 
+    #
 
     logger.info("9. Updating Item in DDB table")
     # update item to include more attributes

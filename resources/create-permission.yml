@@ -71,6 +71,10 @@ Resources:
             Resource: 
               - "arn:aws:ec2:eu-central-1:648410456371:security-group/*"
               - "arn:aws:ec2:eu-central-1:648410456371:vpc/vpc-041e9a7015a49e342"
+          - Effect: Allow
+            Action:
+              - ec2:DescribeSecurityGroups
+            Resource: "*"
       - PolicyName: "test-deploy"
         PolicyDocument:
           Version: "2012-10-17"

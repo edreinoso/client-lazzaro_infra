@@ -147,7 +147,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
                     {
                         'Action': 'DELETE',
                         'ResourceRecordSet': {
-                            'Name': client+'.backend.lazzaro.io',
+                            'Name': client+'.web.lazzaro.io',
                             'Type': 'A',
                             'AliasTarget': {
                                 # zone of the load balancer
@@ -193,18 +193,18 @@ def handler(event, context):
     if(event['Records'][0]['eventName'] == "REMOVE"):
         logger.info(event['Records'][0])  # need to judge whether there is
         # declaration of variables
-        rule_arn = event['Records'][0]['dynamodb']['OldImage']['RuleArn']['S']
-        taskd_arn = event['Records'][0]['dynamodb']['OldImage']['TaskDefinitionArn']['S']
-        target_arn = event['Records'][0]['dynamodb']['OldImage']['TargetArn']['S']
-        security_group_id = event['Records'][0]['dynamodb']['OldImage']['SecurityGroupId']['S']
-        buildid = event['Records'][0]['dynamodb']['OldImage']['BuildId']['S']
+        # rule_arn = event['Records'][0]['dynamodb']['OldImage']['RuleArn']['S']
+        # taskd_arn = event['Records'][0]['dynamodb']['OldImage']['TaskDefinitionArn']['S']
+        # target_arn = event['Records'][0]['dynamodb']['OldImage']['TargetArn']['S']
+        # security_group_id = event['Records'][0]['dynamodb']['OldImage']['SecurityGroupId']['S']
+        # buildid = event['Records'][0]['dynamodb']['OldImage']['BuildId']['S']
         client = event['Records'][0]['dynamodb']['OldImage']['Client']['S']
         # print(listener_arn,target_arn,client)
         print("Client: ", client)
         # calling service deletion function
         # handling_service_deletion(client, target_arn, buildid, taskd_arn, security_group_id)
-        handling_service_deletion(
-            client, rule_arn, target_arn, buildid, taskd_arn, security_group_id)
+        # handling_service_deletion(
+        #     client, rule_arn, target_arn, buildid, taskd_arn, security_group_id)
         # handling_service_deletion(client, buildid) # this is an empty build
     else:
         logger.info("Stream was not REMOVE")
