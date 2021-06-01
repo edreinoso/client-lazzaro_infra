@@ -87,7 +87,7 @@ def createclient():
     # should probably return an error if a certain string is not within
     # certain parameters
     if isValidString(name):
-        print(name)
+        print('Client: ',name)
         ddbQuery = readingFromDDBTable(name)
         if (ddbQuery['Count'] == 0):
             logger.info("Starting Build process")
