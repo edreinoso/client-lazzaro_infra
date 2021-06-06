@@ -5,7 +5,7 @@ variable "region" {
 
 variable "name" {
   type    = string
-  default = "ecs-cluster"
+  default = "backend-ecs-stack"
 }
 
 variable "template" {

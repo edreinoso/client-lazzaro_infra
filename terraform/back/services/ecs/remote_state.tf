@@ -2,8 +2,7 @@ data "terraform_remote_state" "load_balancer" {
   backend = "s3"
   config = {
     bucket = "terraform-state-lazzaro"
-    key    = "env:/v2/lb-ec2.tfstate"
-    # key    = "env:/${terraform.workspace}/lb-ec2.tfstate"
+    key    = "env:/${terraform.workspace}/back/services/alb/alb.tfstate"
     region = "eu-central-1"
   }
 }

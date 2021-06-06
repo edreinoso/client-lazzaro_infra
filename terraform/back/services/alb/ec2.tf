@@ -54,9 +54,15 @@
 # #   }
 # # }
 
-# module "private-routes-bastion" {
-#   source       = "github.com/edreinoso/terraform_infrastructure_as_code/modules/network/route-tables/route"
-#   routeTableId = element(data.terraform_remote_state.network.outputs.private-rt-id, 1)
-#   instanceId   = "${module.bastion-server.ec2-id}"
-#   destination  = "0.0.0.0/0"
+# # module "private-routes-bastion" {
+# #   source       = "github.com/edreinoso/terraform_infrastructure_as_code/modules/network/route-tables/route"
+# #   routeTableId = element(data.terraform_remote_state.network.outputs.private-rt-id, 1)
+# #   instanceId   = "${module.bastion-server.ec2-id}"
+# #   destination  = "0.0.0.0/0"
+# # }
+
+# resource "aws_route" "public-routes" {
+#   route_table_id         = element(data.terraform_remote_state.network.outputs.private-rt-id, 1)
+#   instance_id             = module.bastion-server.ec2-id
+#   destination_cidr_block = "0.0.0.0/0"
 # }

@@ -1,11 +1,13 @@
 ##### FARGATE CONTAINERS SG #####
   resource "aws_security_group" "fargate-security-group" {
-    name        = "tcp-sg-fargate-${var.name}"
+    # name        = "tcp-sg-fargate-${var.name}"
+    name        = "back-fargate-containers-sg-${terraform.workspace}"
     description = "Fargate security group for ${var.name} in ${terraform.workspace}"
     vpc_id      = element(data.terraform_remote_state.network.outputs.vpc-id, 1)
 
     tags = {
-      Name          = "fargate-${var.name}"
+      # Name          = "fargate-${var.name}"
+      Name          = "back-fargate-containers-sg-${terraform.workspace}"
       Template      = var.template
       Purpose       = "Security groups for fargate containers"
       Protocol      = "HTTP, TCP"
@@ -24,6 +26,7 @@
   #   security_group_id        = aws_security_group.fargate-security-group.id
   #   description              = "Rules to allow traffic from load balancer to the fargate containers"
   # }
+  
   resource "aws_security_group_rule" "fargate-security-group-rulev2-01" {
     type                     = "ingress"
     from_port                = 8080
@@ -39,28 +42,29 @@
   #   from_port                = 0
   #   to_port                  = 0
   #   protocol                 = "-1"
-  #   source_security_group_id = data.terraform_remote_state.load_balancer.outputs.bastion-security-group # needs to be dynamic
-  #   # source_security_group_id = "sg-0fe4e01770999b222" # needs to be dynamic
+  #   source_security_group_id = data.terraform_remote_state.load_balancer.outputs.bastion-security-group
   #   security_group_id        = aws_security_group.fargate-security-group.id
   #   description              = "Rules to allow traffic coming into the cluster through the NAT host"
   # }
+
   resource "aws_security_group_rule" "fargate-security-group-rulev2-02" {
     type                     = "ingress"
     from_port                = 80
     to_port                  = 80
     protocol                 = "tcp"
-    source_security_group_id = data.terraform_remote_state.load_balancer.outputs.bastion-security-group
+    # source_security_group_id = data.terraform_remote_state.load_balancer.outputs.bastion-security-group
+    source_security_group_id = "sg-08d145290578e5b9c"
     security_group_id        = aws_security_group.fargate-security-group.id
     description              = "Rules to allow HTTP traffic coming into the cluster through the NAT host"
   }
-
 
   resource "aws_security_group_rule" "fargate-security-group-rule-03" {
     type                     = "ingress"
     from_port                = 443
     to_port                  = 443
     protocol                 = "tcp"
-    source_security_group_id = data.terraform_remote_state.load_balancer.outputs.bastion-security-group
+    # source_security_group_id = data.terraform_remote_state.load_balancer.outputs.bastion-security-group
+    source_security_group_id = "sg-08d145290578e5b9c"
     security_group_id        = aws_security_group.fargate-security-group.id
     description              = "Rules to allow HTTPS traffic coming into the cluster through the NAT host"
   }

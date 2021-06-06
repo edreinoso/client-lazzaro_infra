@@ -16,9 +16,12 @@
 
 ## ECR ##
   variable "cluster_id" {
-    type = string
+    type = map
     # this is completely static
-    default = "arn:aws:ecs:eu-central-1:648410456371:cluster/lazzaro-cluster"
+    default = {
+      prod = "arn:aws:ecs:eu-central-1:648410456371:cluster/lazzaro-back-cluster-prod"
+      pre = "arn:aws:ecs:eu-central-1:648410456371:cluster/lazzaro-back-cluster-pre"
+    }
   }
   
   variable "repository-name" {
