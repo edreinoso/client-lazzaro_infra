@@ -1,4 +1,4 @@
-# Lazzaro Frontend Deployment
+# Lazzaro Infrasturcture Deployment
 
 
 ## Architecture
