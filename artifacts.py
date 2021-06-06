@@ -176,28 +176,28 @@ def handle_service_creation(client):
         sg_client.authorize_security_group_ingress(
             GroupId=sg_id,
             IpPermissions=[
-                {
-                    'IpProtocol': 'tcp',
-                    'FromPort': 80,
-                    'ToPort': 80,
-                    'UserIdGroupPairs': [
-                        {
-                            'Description': 'allowing ingress from nat',
-                            'GroupId': os.environ['nat_sg'],
-                        },
-                    ]
-                },
-                {
-                    'IpProtocol': 'tcp',
-                    'FromPort': 443,
-                    'ToPort': 443,
-                    'UserIdGroupPairs': [
-                        {
-                            'Description': 'allowing ingress from nat',
-                            'GroupId': os.environ['nat_sg'],
-                        },
-                    ]
-                },
+                # {
+                #     'IpProtocol': 'tcp',
+                #     'FromPort': 80,
+                #     'ToPort': 80,
+                #     'UserIdGroupPairs': [
+                #         {
+                #             'Description': 'allowing ingress from nat',
+                #             'GroupId': os.environ['nat_sg'],
+                #         },
+                #     ]
+                # },
+                # {
+                #     'IpProtocol': 'tcp',
+                #     'FromPort': 443,
+                #     'ToPort': 443,
+                #     'UserIdGroupPairs': [
+                #         {
+                #             'Description': 'allowing ingress from nat',
+                #             'GroupId': os.environ['nat_sg'],
+                #         },
+                #     ]
+                # },
                 {
                     'IpProtocol': 'tcp',
                     'FromPort': int(port),

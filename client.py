@@ -31,6 +31,10 @@ def build_process(port_n, name, parsedTime):
                 'name': 'port',
                 'value': port_n,
             },
+            # {
+            #     'name': 'environment',
+            #     'value': env,
+            # },
             {
                 'name': 'ong_name',
                 'value': name,
@@ -56,7 +60,7 @@ def build_process(port_n, name, parsedTime):
     return build
 
 
-def readingFromDDBTable(name):
+def isClientInDDB(name):
     # query dynamodb table for the item
     logger.info("Checking if client already exists")
     res = ddb_client.query(
@@ -88,7 +92,7 @@ def createclient():
     # certain parameters
     if isValidString(name):
         print('Client: ', name)
-        ddbQuery = readingFromDDBTable(name)
+        ddbQuery = isClientInDDB(name)
         if (ddbQuery['Count'] == 0):
             logger.info("Starting Build process")
             build = build_process(port_n, name, parsedTime)
@@ -109,11 +113,11 @@ def createclient():
                 },
             )
             res = Response("Client added successfully",
-                            status=200, mimetype='application/json')
+                           status=200, mimetype='application/json')
             return res
         else:
             res = Response("Client already exists",
-                            status=400, mimetype='application/json')
+                           status=400, mimetype='application/json')
             return res
     else:
         res = Response("Please enter a valid string",
@@ -130,26 +134,31 @@ def removeclient():
     # there should be a handler here to check whether the item
     # is in the db
     if isValidString(name):
-        try:
-            ddb_client.delete_item(
-                TableName='frontend-ddb-client',
-                Key={
-                    'Client': {
-                        'S': name,
-                    }
-                },
-            )
-            res = Response("Client removed successfully",
-                           status=200, mimetype='application/json')
+        ddbQuery = isClientInDDB(name)
+        if (ddbQuery['Count'] == 0):
+            res = Response("Client does not exists",
+                           status=400, mimetype='application/json')
             return res
-        except botocore.exceptions.ClientError as error:
-            if error.response['Error']['Code'] == 'ConditionalCheckFailedException':
-                # might have to check whether this is possible
-                res = Response("Client was not found",
-                               status=400, mimetype='application/json')
+        else:
+            try:
+                ddb_client.delete_item(
+                    TableName='frontend-ddb-client',
+                    Key={
+                        'Client': {
+                            'S': name,
+                        }
+                    },
+                )
+                res = Response("Client removed successfully",
+                               status=200, mimetype='application/json')
                 return res
-            else:
-                raise error
+            except botocore.exceptions.ClientError as error:
+                if error.response['Error']['Code'] == 'ConditionalCheckFailedException':
+                    res = Response("Client was not found",
+                                   status=400, mimetype='application/json')
+                    return res
+                else:
+                    raise error
     else:
         res = Response("Please enter a valid string",
                        status=400, mimetype='application/json')
