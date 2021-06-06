@@ -1,0 +1,145 @@
+##### EC2 BASTION SG #####
+  resource "aws_security_group" "bastion-security-group" {
+    name        = "ssh-sg-bastion-${var.name}"
+    description = "Bastion security group for ${var.name} in ${terraform.workspace}"
+    vpc_id      = element(data.terraform_remote_state.network.outputs.vpc-id, 1)
+
+    tags = {
+      Name          = "ec2-${var.name}"
+      Template      = var.template
+      Purpose       = "Security groups for fargate containers"
+      Protocol      = "SSH, HTTP, HTTP"
+      Port          = "22, 80, 443"
+      Creation_Date = var.created-on
+    }
+  }
+
+  resource "aws_security_group_rule" "bastion-security-group-rule-01" {
+    type              = "ingress"
+    from_port         = 22
+    to_port           = 22
+    protocol          = "tcp"
+    cidr_blocks       = split(",", var.ips)
+    description       = "rules from our local ips"
+    security_group_id = aws_security_group.bastion-security-group.id
+  }
+
+  resource "aws_security_group_rule" "bastion-security-group-rule-02" {
+    type              = "ingress"
+    from_port         = 80
+    to_port           = 80
+    protocol          = "tcp"
+    cidr_blocks       = ["10.0.0.64/27", "10.0.0.128/27"]
+    description       = "Rules to allow HTTP traffic flow to private subnets - app a and b"
+    security_group_id = aws_security_group.bastion-security-group.id
+  }
+  
+  resource "aws_security_group_rule" "bastion-security-group-rule-04" {
+    type              = "ingress"
+    from_port         = var.db-port
+    to_port           = var.db-port
+    protocol          = "tcp"
+    cidr_blocks       = ["10.0.0.64/27", "10.0.0.128/27"]
+    description       = "Rules to allow Postgresql traffic flow to private subnets - app a and b"
+    security_group_id = aws_security_group.bastion-security-group.id
+  }
+
+  resource "aws_security_group_rule" "bastion-security-group-rule-03" {
+    type              = "ingress"
+    from_port         = 443
+    to_port           = 443
+    protocol          = "tcp"
+    cidr_blocks       = ["10.0.0.64/27", "10.0.0.128/27"]
+    security_group_id = aws_security_group.bastion-security-group.id
+    description       = "Rules to allow HTTPS traffic flow to private subnets - app a and b"
+  }
+
+  resource "aws_security_group_rule" "bastion-security-group-rule-egress" {
+    type              = "egress"
+    from_port         = 0
+    to_port           = 0
+    protocol          = "-1"
+    cidr_blocks       = ["0.0.0.0/0"]
+    security_group_id = aws_security_group.bastion-security-group.id
+  }
+
+  # ##### EC2 TEST #####
+
+  # resource "aws_security_group" "test-security-group" {
+  #   name        = "test-${var.name}"
+  #   description = "test security group for ${var.name} in ${terraform.workspace}"
+  #   vpc_id      = element(data.terraform_remote_state.network.outputs.vpc-id, 1)
+
+  #   tags = {
+  #     Name          = "test-${var.name}"
+  #     Template      = var.template
+  #     Purpose       = "Security groups for fargate containers"
+  #     Protocol      = "SSH, POSTGRESQL"
+  #     Port          = "22, ${var.db-port}"
+  #     Creation_Date = var.created-on
+  #   }
+  # }
+
+  # resource "aws_security_group_rule" "test-security-group-rule-01" {
+  #   type              = "ingress"
+  #   from_port         = 22
+  #   to_port           = 22
+  #   protocol          = "tcp"
+  #   description       = "rules 22 from bastion"
+  #   source_security_group_id = aws_security_group.bastion-security-group.id
+  #   security_group_id = aws_security_group.test-security-group.id
+  # }
+
+  # resource "aws_security_group_rule" "test-security-group-rule-02" {
+  #   type              = "ingress"
+  #   from_port         = var.db-port
+  #   to_port           = var.db-port
+  #   protocol          = "tcp"
+  #   source_security_group_id = aws_security_group.bastion-security-group.id
+  #   description       = "allowing ingress rule from the rds instance"
+  #   security_group_id = aws_security_group.test-security-group.id
+  # }
+
+  # resource "aws_security_group_rule" "test-security-group-rule-egress" {
+  #   type              = "egress"
+  #   from_port         = 0
+  #   to_port           = 0
+  #   protocol          = "-1"
+  #   cidr_blocks       = ["0.0.0.0/0"]
+  #   security_group_id = aws_security_group.test-security-group.id
+  # }
+
+##### ELB SG #####
+  resource "aws_security_group" "elb-security-group" {
+    name        = "https-sg-elb-${var.name}"
+    description = "ELB security group for ${var.name} in ${terraform.workspace}"
+    vpc_id      = element(data.terraform_remote_state.network.outputs.vpc-id, 1)
+
+    tags = {
+      Name          = "lb-${var.name}"
+      Template      = var.template
+      Purpose       = "Security groups for load balancer"
+      Protocol      = "HTTP"
+      Port          = var.tg-port
+      Creation_Date = var.created-on
+    }
+  }
+
+  resource "aws_security_group_rule" "elb-security-group-rule-01" {
+    type              = "ingress"
+    from_port         = var.tg-port
+    to_port           = var.tg-port
+    protocol          = "tcp"
+    cidr_blocks       = ["0.0.0.0/0"]
+    security_group_id = aws_security_group.elb-security-group.id
+    description       = "Rules that are going to allow traffic to the load balancer"
+  }
+
+  resource "aws_security_group_rule" "elb-security-group-rule-egress" {
+    type              = "egress"
+    from_port         = 0
+    to_port           = 0
+    protocol          = "-1"
+    cidr_blocks       = ["0.0.0.0/0"]
+    security_group_id = aws_security_group.elb-security-group.id
+  }

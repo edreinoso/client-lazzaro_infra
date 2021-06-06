@@ -1,0 +1,88 @@
+## V1 = 3000
+## V2 = 8080
+
+# # The main service.
+resource "aws_ecs_service" "ecs_service" {
+ name            = "service-${terraform.workspace}-${var.name}"
+ task_definition = aws_ecs_task_definition.ecs_task_definition.arn
+ cluster         = var.cluster_id
+ # launch_type     = "FARGATE" # I have to change things here if I want to do fargate spot
+ capacity_provider_strategy {
+  #  capacity_provider = "FARGATE"
+   capacity_provider = "FARGATE_SPOT"
+   weight = 100
+ }
+
+ desired_count = 1
+
+ load_balancer {
+   target_group_arn = element(data.terraform_remote_state.load_balancer.outputs.target_group_arn, 0)
+   container_name   = "ecs-cluster"
+   container_port   = "8080"
+ }
+
+ network_configuration {
+   # need to test with Ivan in order to change
+   assign_public_ip = true # this needs to change accordingly as well
+
+   security_groups = split(",", aws_security_group.fargate-security-group.id)
+
+   # these are going to have to be static while there is no backend set up
+   subnets = [
+    #  element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-a, 0), 0),
+    #  element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 0), 0)
+     element(element(data.terraform_remote_state.network.outputs.pri-subnet-id-b, 1),0,),
+     element(element(data.terraform_remote_state.network.outputs.pri-subnet-id-a, 1),0,)
+   ]
+ }
+
+#  depends_on = [
+#    module.elb.elb-arn
+#  ]
+ # tags = {
+ #   Name          = "ecs_ecs_service"
+ #   Template      = "ecs_"
+ #   Environment   = "${terraform.workspace}"
+ #   Application   = ""
+ #   Purpose       = "ECS service to hold the tasks from the application layer"
+ #   Creation_Date = "October_13_2020"
+ # }
+}
+
+# # The task definition.
+resource "aws_ecs_task_definition" "ecs_task_definition" {
+ family = "task-definition-${var.name}"
+
+ container_definitions = <<EOF
+ [
+   {
+     "name": "ecs-cluster",
+     "image": "${var.account-id}.dkr.ecr.${var.region}.amazonaws.com/ecr-${lookup(var.repository-name, terraform.workspace)}-${var.name}:v1",
+     "portMappings": [
+       {
+         "containerPort": 8080
+       }
+     ],
+     "logConfiguration": {
+       "logDriver": "awslogs",
+       "options": {
+         "awslogs-region": "eu-central-1",
+         "awslogs-group": "/ecs/${terraform.workspace}/",
+         "awslogs-stream-prefix": "ecs"
+       }
+     }
+   }
+ ]
+
+EOF
+
+ execution_role_arn = aws_iam_role.ecs-api-task-execution-role.arn
+
+ # These are the minimum values for Fargate containers.
+ cpu                      = 512
+ memory                   = 1024
+ requires_compatibilities = ["FARGATE"]
+
+ # This is required for Fargate containers (more on this later).
+ network_mode = "awsvpc"
+}
