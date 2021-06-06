@@ -26,6 +26,8 @@
     default = {
       v1 = "tst" # this is the todo app
       v2 = "dev"
+      prod = "prod"
+      pre = "pre"
     }
   }
 
@@ -34,5 +36,13 @@
     default = {
       v1 = 3000
       v2 = 8080
+    }
+  }
+
+  variable "pub-ip" {
+    type = map
+    default = {
+      prod = true
+      pre = false
     }
   }

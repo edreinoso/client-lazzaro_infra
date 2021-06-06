@@ -12,8 +12,8 @@
 
   variable "elb-tg-name" {
     type = string
-    default = "ecs-cluster-tg"
-    # default = "lazzaro-back-tg-"
+    default = "lazzaro-back-tg"
+    # default = "ecs-cluster-tg"
   }
 
   variable "tg-port" {
@@ -41,8 +41,8 @@
 ## S3 ##
   variable "bucket-name" {
     type    = string
-    default = "tf-ecs-load-balancer-lazzaro"
-    # default = "lazzaro-back-s3-"
+    default = "lazzaro-back-s3"
+    # default = "tf-ecs-load-balancer-lazzaro"
   }
 
   variable "acl" {
@@ -77,5 +77,6 @@
     default = {
       prod = ""
       pre = "pre"
+      test = "test"
     }
   }

@@ -2,8 +2,8 @@
 
 module "elb" {
   source         = "github.com/edreinoso/terraform_infrastructure_as_code/modules/compute/load-balancer/elb"
-  elb-name       = "lb-${var.name}"
-  # elb-name       = "lazzaro-back-alb-${terraform.workspace}"
+  elb-name       = "lazzaro-back-alb-${terraform.workspace}"
+  # elb-name       = "lb-${var.name}"
   internal-elb   = var.internal-elb
   elb-type       = var.elb-type
   security-group = split(",", aws_security_group.elb-security-group.id)
@@ -11,9 +11,11 @@ module "elb" {
     element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-a, 0),0,),
     element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 0),0,)
   ]
-  bucket-name = var.bucket-name
+  bucket-name = "${var.bucket-name}-${terraform.workspace}"
+  # bucket-name = var.bucket-name
   tags = {
-    Name          = "lb-${var.name}"
+    Name          = "lazzaro-back-alb-${terraform.workspace}"
+    # Name          = "lb-${var.name}"
     Template      = var.template
     Purpose       = "Load balancer set up that sits in front of the cluster"
     Creation_Date = var.created-on
@@ -51,8 +53,8 @@ module "listener" {
 }
 
 resource "aws_s3_bucket" "s3" {
-  bucket        = var.bucket-name
-  # bucket        = "${var.bucket-name}-${terraform.workspace}"
+  bucket        = "${var.bucket-name}-${terraform.workspace}"
+  # bucket        = var.bucket-name
   acl           = var.acl
   force_destroy = var.destroy
 
@@ -67,7 +69,7 @@ resource "aws_s3_bucket" "s3" {
              "s3:PutObject"
          ],
          "Effect": "Allow",
-         "Resource": "arn:aws:s3:::${var.bucket-name}/AWSLogs/${var.account-id}/*",
+         "Resource": "arn:aws:s3:::${var.bucket-name}-${terraform.workspace}/AWSLogs/${var.account-id}/*",
          "Principal": {
              "AWS": [
                  "054676820928"
@@ -79,7 +81,8 @@ resource "aws_s3_bucket" "s3" {
 POLICY
 
   tags = {
-    Name          = var.bucket-name
+    Name          = "${var.bucket-name}-${terraform.workspace}"
+    # Name          = var.bucket-name
     Template      = var.template
     Purpose       = "S3 bucket for logging the load balancer connections"
     Creation_Date = var.created-on
@@ -88,8 +91,8 @@ POLICY
 
 resource "aws_route53_record" "elb_record" {
  zone_id = "Z02368721HBX9HT236NI2"
- name    = "elb"
-#  name    = "elb${lookup(var.r53-record-name, terraform.workspace)}"
+#  name    = "elb"
+ name    = "elb${lookup(var.r53-record-name, terraform.workspace)}"
  type    = "A"
  alias {
    name                   = module.elb.elb-dns-name

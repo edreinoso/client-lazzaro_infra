@@ -4,6 +4,7 @@
 # # The main service.
 resource "aws_ecs_service" "ecs_service" {
  name            = "service-${terraform.workspace}-${var.name}"
+#  name            = "lazzaro-back-ecs-${terraform.workspace}"
  task_definition = aws_ecs_task_definition.ecs_task_definition.arn
  cluster         = var.cluster_id
  # launch_type     = "FARGATE" # I have to change things here if I want to do fargate spot
@@ -24,6 +25,7 @@ resource "aws_ecs_service" "ecs_service" {
  network_configuration {
    # need to test with Ivan in order to change
    assign_public_ip = true # this needs to change accordingly as well
+  #  assign_public_ip = lookup(var.pub-ip, terraform.workspace) # this needs to change accordingly as well
 
    security_groups = split(",", aws_security_group.fargate-security-group.id)
 
@@ -52,6 +54,7 @@ resource "aws_ecs_service" "ecs_service" {
 # # The task definition.
 resource "aws_ecs_task_definition" "ecs_task_definition" {
  family = "task-definition-${var.name}"
+#  family = "lazzaro-back-tsk-${terraform.workspace}"
 
  container_definitions = <<EOF
  [
