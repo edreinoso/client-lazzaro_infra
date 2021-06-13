@@ -62,16 +62,15 @@ functions:
     events:
       - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502
   
-  ## Test listener with rule
-  testservice:
-    handler: testdeploy.handler
-    role: arn:aws:iam::648410456371:role/frontend-create-lambda-service-role
-    timeout: 30
-    events:
-      - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502
+  ## Test ssm parameter retrieval
+  # testservice:
+  #   handler: testdeploy.handler
+  #   role: arn:aws:iam::648410456371:role/frontend-create-lambda-service-role
+  #   timeout: 30
 
 resources:
   - ${file(resources/codebuild-role.yml)}
   - ${file(resources/client-gateway-permission.yml)}
   - ${file(resources/create-permission.yml)}
   - ${file(resources/delete-permission.yml)}
+  # - ${file(resources/test-permission.yml)}

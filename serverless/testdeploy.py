@@ -9,93 +9,104 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Global vars: boto3 init
-elb_client = boto3.client('elbv2')
+ssm_params = boto3.client('ssm')
 
-
-def handling_service_deletion(client, port):
-    # def handling_service_deletion(client, buildid):
-    logger.info('Handling service deletion')
-
-    logger.info("1. Creating Target Groups")
-    # target groups
-    targetg = elb_client.create_target_group(
-        Name=client,  # dynamic name based on ngo
-        Port=int(port),
-        VpcId=os.environ['vpc_id'],  # this could probably be hardcoded
-        Protocol='HTTP',  # this could possibly be dynamic
-        HealthCheckPath='/healthcheck',
-        HealthCheckPort=port,
-        TargetType='ip',
+# Getting the infra parameters from SSM Parameter Store
+def get_all_params(env):
+    dict_of_params = {}
+    
+    ### network
+    ## getting vpc id
+    vpc_id = ssm_params.get_parameter(
+        Name='/prod/share/network/vpc/vpc_id',
     )
-    target_arn = targetg['TargetGroups'][0]['TargetGroupArn']
+    dict_of_params['vpc_id'] = vpc_id
 
-    rules = elb_client.describe_rules(
-        # this is gonna have to be dynamic
-        ListenerArn=os.environ['listener_arn'],
+    ## getting subnet id - 2 a
+    client_subnet_2_a = ssm_params.get_parameter(
+        Name='/prod/share/network/subnet/client_subnet_2_a',
     )
-
-    # n_rules = len(rules['Rules'])  # the number of rules
-
-    # print('rule: ', rules['Rules'])
-    # print('number of rules: ', n_rules)
-
-    # foo = len(rules['Rules'])-2
-    # print('foo: num', foo)
-
-    # print(rules['Rules'][foo])
-    # # final_n = rules['Rules'][foo]['Priority']
-    # final_n = int(rules['Rules'][len(rules['Rules'])-2]['Priority'])
-    # print(type(final_n))
-
-    # hello = final_n+1
-
-    # print('hello: ', int(rules['Rules'][len(rules['Rules'])-2]['Priority'])+1)
-    # print('hello: ',type(hello))
-
-    logger.info("2. Creating Listener Rule")
-    # create listener rule
-    listener_rule = elb_client.create_rule(
-        ListenerArn=os.environ['listener_arn'],
-        Conditions=[
-            {
-                'Field': 'host-header',
-                'Values': [
-                    client+'.web.lazzaro.io'
-                ]
-            },
-        ],
-        Priority=int(rules['Rules'][len(rules['Rules'])-2]['Priority'])+1,
-        Actions=[
-            {
-                'Type': 'forward',
-                'TargetGroupArn': target_arn,
-                'ForwardConfig': {
-                    'TargetGroups': [
-                        {
-                            'TargetGroupArn': target_arn,
-                        },
-                    ]
-                }
-            },
-        ],
+    dict_of_params['client_subnet_2_a'] = client_subnet_2_a
+    ## getting subnet id - 2 b
+    client_subnet_2_b = ssm_params.get_parameter(
+        Name='/prod/share/network/subnet/client_subnet_2_b',
     )
-    rule_arn = listener_rule['Rules'][0]['RuleArn']
+    dict_of_params['client_subnet_2_b'] = client_subnet_2_b
+    ## getting subnet id - 3 a
+    client_subnet_3_a = ssm_params.get_parameter(
+        Name='/prod/share/network/subnet/client_subnet_3_a',
+    )
+    dict_of_params['client_subnet_3_a'] = client_subnet_3_a
+    ## getting subnet id - 3 b
+    client_subnet_3_b = ssm_params.get_parameter(
+        Name='/prod/share/network/subnet/client_subnet_3_b',
+    )
+    dict_of_params['client_subnet_3_b'] = client_subnet_3_b
+    
+    ### ecs
+    ## role
+    role_arn = ssm_params.get_parameter(
+        Name='/'+env+'/front/services/ecs/role_arn',
+    )
+    dict_of_params['role_arn'] = role_arn
+    ## repo name
+    repo_name = ssm_params.get_parameter(
+        Name='/'+env+'/front/services/ecs/repo_name',
+    )
+    dict_of_params['repo_name'] = repo_name
+    ## cluster arn
+    cluster_arn = ssm_params.get_parameter(
+        Name='/'+env+'/front/services/ecs/cluster_arn',
+    )
+    dict_of_params['cluster_arn'] = cluster_arn
+    ## image
+    image = ssm_params.get_parameter(
+        Name='/'+env+'/front/services/ecs/image',
+    )
+    dict_of_params['image'] = image
+    ## container name
+    container = ssm_params.get_parameter(
+        Name='/'+env+'/front/services/ecs/container',
+    )
+    dict_of_params['container'] = container
 
+    ### elb
+    ## arn
+    alb_arn = ssm_params.get_parameter(
+        Name='/'+env+'/front/services/elb/alb_arn',
+    )
+    dict_of_params['alb_arn'] = alb_arn
+    ## dns
+    alb_dns = ssm_params.get_parameter(
+        Name='/'+env+'/front/services/elb/alb_dns',
+    )
+    dict_of_params['alb_dns'] = alb_dns
+    ## zone
+    alb_zone = ssm_params.get_parameter(
+        Name='/'+env+'/front/services/elb/alb_zone',
+    )
+    dict_of_params['alb_zone'] = alb_zone
+    ## sg
+    alb_sg = ssm_params.get_parameter(
+        Name='/'+env+'/front/services/elb/alb_sg',
+    )
+    dict_of_params['alb_sg'] = alb_sg
+    ## certificate
+    certificate_arn = ssm_params.get_parameter(
+        Name='/'+env+'/front/services/elb/certificate_arn',
+    )
+    dict_of_params['certificate_arn'] = certificate_arn
+
+    print(dict_of_params)
+
+    return dict_of_params
 
 def handler(event, context):
-    # boto3 init
-    if(event['Records'][0]['eventName'] == "INSERT"):
-        logger.info(event['Records'][0])  # need to judge whether there is
-        # declaration of variables
-        client = event['Records'][0]['dynamodb']['NewImage']['Client']['S']
-        port = event['Records'][0]['dynamodb']['NewImage']['Port']['S']
-        print("Client: ", client)
-        # calling service deletion function
-        # handling_service_deletion(client, port) # this is an empty build
-    else:
-        logger.info("Stream was not INSERT")
+    params = get_all_params(os.environ['environment'])
+
+    print(params)
 
     return {
         'statusCode': 200,
-        'body': json.dumps('Function triggred by DynamoDB Stream!')
+        'body': json.dumps('Function triggred by S3!')
     }

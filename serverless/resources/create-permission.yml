@@ -25,7 +25,6 @@ Resources:
               - logs:CreateLogStream
             Resource: 
               - "arn:aws:logs:eu-central-1:648410456371:log-group:/aws/lambda/frontend-ecs-services-dev-createservice:*"
-              - "arn:aws:logs:eu-central-1:648410456371:log-group:/aws/lambda/frontend-ecs-services-dev-testservice:*"
       - PolicyName: "permissions-for-ddb"
         PolicyDocument:
           Version: "2012-10-17"
