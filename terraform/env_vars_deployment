@@ -1,0 +1,5 @@
+alias pre_elb='cp ./test/pre_elb.txt ./elb.tf; cp ./test/pre_sg.txt security.tf; cp ./test/pre_vars_elb.txt vars.tf'
+alias prod_elb='cp ./test/prod_elb.txt ./elb.tf; cp ./test/prod_sg.txt security.tf; cp ./test/prod_vars_elb.txt vars.tf'
+
+alias prod_ecs='cp ./test/prod_infra.txt ./infra.tf'
+alias pre_ecs='cp ./test/pre_infra.txt ./infra.tf'

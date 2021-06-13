@@ -19,7 +19,8 @@ module "elb" {
     element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-a, 0),0,),
     element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 0),0,)
   ]
-  bucket-name = var.bucket-name
+  bucket-name = "${var.bucket-name}-${terraform.workspace}" # pre
+  # bucket-name = var.bucket-name # prod
   tags = {
     Name          = "lazzaro-front-alb-${terraform.workspace}" # pre
     # Name          = "lb-${terraform.workspace}--${lookup(var.name, terraform.workspace)}" # prod

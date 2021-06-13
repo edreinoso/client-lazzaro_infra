@@ -17,22 +17,38 @@ sg_client = boto3.client('ec2')
 log_client = boto3.client('logs')
 r53_client = boto3.client('route53')
 table = dynamodb.Table('frontend-ddb-client')
-
+ssm_params = boto3.client('ssm')
 # Getting the infra parameters from SSM Parameter Store
 def get_all_params(env):
     dict_of_params = {}
     
     ## getting vpc id
-    vpc_id = client.get_parameter(
-        Name=env+'vpc_id',
+    vpc_id = ssm_params.get_parameter(
+        Name='/'+env+'/share/network/vpc/vpc_id',
     )
     dict_of_params['vpc_id'] = vpc_id
 
-    ## getting role arn
-    role_arn = client.get_parameter(
-        Name=env+'role_arn',
+    ## getting subnet id - 2 a
+    client_subnet_2_a = ssm_params.get_parameter(
+        Name='/'+env+'/share/network/subnet/client_subnet_2_a',
     )
-    dict_of_params['role_arn'] = role_arn
+    dict_of_params['client_subnet_2_a'] = client_subnet_2_a
+    ## getting subnet id - 2 b
+    client_subnet_2_b = ssm_params.get_parameter(
+        Name='/'+env+'/share/network/subnet/client_subnet_2_b',
+    )
+    dict_of_params['client_subnet_2_b'] = client_subnet_2_b
+    ## getting subnet id - 3 a
+    client_subnet_3_a = ssm_params.get_parameter(
+        Name='/'+env+'/share/network/subnet/client_subnet_3_a',
+    )
+    dict_of_params['client_subnet_3_a'] = client_subnet_3_a
+    ## getting subnet id - 3 b
+    client_subnet_3_b = ssm_params.get_parameter(
+        Name='/'+env+'/share/network/subnet/client_subnet_3_b',
+    )
+    dict_of_params['client_subnet_3_b'] = client_subnet_3_b
+
 
     return dict_of_params
 
@@ -436,7 +452,7 @@ def handler(event, context):
     client = obj.split('.')[0]
 
     print("Client: ", client)
-    handle_service_creation(client)
+    # handle_service_creation(client)
 
     return {
         'statusCode': 200,

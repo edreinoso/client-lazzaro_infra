@@ -1,0 +1,39 @@
+data "terraform_remote_state" "network" {
+  backend = "s3"
+  config = {
+    bucket = "terraform-state-lazzaro"
+    key    = "env:/v1/network.tfstate"
+    region = "eu-central-1"
+  }
+}
+
+
+# dynamic variables according to the environment
+## vpc
+resource "aws_ssm_parameter" "vpc_id" {
+  name  = "/${terraform.workspace}/share/network/vpc/vpc_id"
+  type  = "String"
+  value = element(data.terraform_remote_state.network.outputs.vpc-id, 1)
+}
+
+## subnets
+resource "aws_ssm_parameter" "client_subnet_2_a" {
+  name  = "/${terraform.workspace}/share/network/subnet/client_subnet_2_a"
+  type  = "String"
+  value = element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-a, 1),0,)
+}
+resource "aws_ssm_parameter" "client_subnet_2_b" {
+  name  = "/${terraform.workspace}/share/network/subnet/client_subnet_2_b"
+  type  = "String"
+  value = element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 2),0,)
+}
+resource "aws_ssm_parameter" "client_subnet_3_a" {
+  name  = "/${terraform.workspace}/share/network/subnet/client_subnet_3_a"
+  type  = "String"
+  value = element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 1),0,)
+}
+resource "aws_ssm_parameter" "client_subnet_3_b" {
+  name  = "/${terraform.workspace}/share/network/subnet/client_subnet_3_b"
+  type  = "String"
+  value = element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 2),0,)
+}
