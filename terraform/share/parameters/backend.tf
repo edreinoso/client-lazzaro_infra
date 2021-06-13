@@ -3,6 +3,6 @@ terraform {
     bucket         = "terraform-state-lazzaro"
     dynamodb_table = "terraform-state-lock-ddb"
     region         = "eu-central-1"
-    key            = "services_ecs1_front.tfstate" # this would come to be the name of the file
+    key            = "back/share/parameters.tfstate" # this would come to be the name of the file
   }
 }

@@ -18,9 +18,28 @@ log_client = boto3.client('logs')
 r53_client = boto3.client('route53')
 table = dynamodb.Table('frontend-ddb-client')
 
+# Getting the infra parameters from SSM Parameter Store
+def get_all_params(env):
+    dict_of_params = {}
+    
+    ## getting vpc id
+    vpc_id = client.get_parameter(
+        Name=env+'vpc_id',
+    )
+    dict_of_params['vpc_id'] = vpc_id
+
+    ## getting role arn
+    role_arn = client.get_parameter(
+        Name=env+'role_arn',
+    )
+    dict_of_params['role_arn'] = role_arn
+
+    return dict_of_params
 
 def handle_service_creation(client):
+# def handle_service_creation(client, params):
     image = os.environ['image']+client
+    # image = params['image']+client
     containerName = os.environ['containerName']+client
 
     # get stuff from dynamodb
@@ -406,8 +425,11 @@ def handle_service_creation(client):
         }
     )
 
-
 def handler(event, context):
+    params = get_all_params(os.environ['environment'])
+
+    print(params)
+
     # getting client from s3 event
     key = event['Records'][0]['s3']['object']['key']
     obj = key.split('/')[1]

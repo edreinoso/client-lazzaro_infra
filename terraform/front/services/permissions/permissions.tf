@@ -5,7 +5,8 @@
 # # The assume_role_policy field works with the following aws_iam_policy_document to allow
 # # ECS tasks to assume this role we're creating.
 resource "aws_iam_role" "ecs-api-task-execution-role" {
- name               = "frontend-services-role"
+ name               = "frontend-services-role-${terraform.workspace}" # pre
+#  name               = "frontend-services-role" # prod
  assume_role_policy = data.aws_iam_policy_document.ecs-task-assume-role.json
 }
 

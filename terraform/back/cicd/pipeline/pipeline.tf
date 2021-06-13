@@ -1,6 +1,15 @@
+data "terraform_remote_state" "cicd_permissions" {
+  backend = "s3"
+  config = {
+    bucket = "terraform-state-lazzaro"
+    key    = "env:/${terraform.workspace}/back/cicd/permissions/permissions.tfstate"
+    region = "eu-central-1"
+  }
+}
+
 resource "aws_codebuild_project" "ecs_containers_build" {
-  name         = "${var.name}-build"
-  service_role = aws_iam_role.ecs-build-role.arn
+  name         = "lazzaro-back-build-${terraform.workspace}"
+  service_role = data.terraform_remote_state.cicd_permissions.outputs.code_build_role_arn
 
   artifacts {             # required
     type = "NO_ARTIFACTS" # required
@@ -25,7 +34,7 @@ resource "aws_codebuild_project" "ecs_containers_build" {
     }
     # environment_variable {
     #   name  = "environment"
-    #   value = ""
+    #   value = "#{SourceVariables.BranchName}"
     # }
   }
 
@@ -49,7 +58,7 @@ resource "aws_codebuild_project" "ecs_containers_build" {
   }
 
   tags = {
-    Name          = "${var.name}-build"
+    Name          = "lazzaro-back-build-${terraform.workspace}"
     Template      = var.template
     Purpose       = var.purpose
     Creation_Date = var.created-on
@@ -57,11 +66,11 @@ resource "aws_codebuild_project" "ecs_containers_build" {
 }
 
 resource "aws_codepipeline" "ecs_container_pipeline" {
-  name     = "${var.name}-pipeline"              # required
-  role_arn = aws_iam_role.ecs-pipeline-role.arn # required
+  name     = "lazzaro-back-pipeline-${terraform.workspace}"
+  role_arn = data.terraform_remote_state.cicd_permissions.outputs.code_pipeline_role_arn
 
-  artifact_store {                       # required
-    location = aws_s3_bucket.ecs-s3-pipeline.bucket # what is this?
+  artifact_store {
+    location = data.terraform_remote_state.cicd_permissions.outputs.bucket_location
     type     = "S3"
   }
 
@@ -70,17 +79,19 @@ resource "aws_codepipeline" "ecs_container_pipeline" {
     name = "Source" # required
 
     action { # required
-      name             = "Source"
       category         = "Source"
+      name             = "GithubCode"
+      namespace        = var.source_namespace
       owner            = "AWS"
       provider         = "CodeStarSourceConnection"
       version          = "1"
-      output_artifacts = ["source_output_ecs_cluster"]
-
+      output_artifacts = ["backend_${terraform.workspace}_source_output"]
       configuration = {
         ConnectionArn    = "arn:aws:codestar-connections:us-east-1:648410456371:connection/dc980cdf-217c-4b16-9361-21001850438d"
         FullRepositoryId = "IvanSaiz/lazzaro-base-api"
-        BranchName       = "master"
+        BranchName       = "${lookup(var.branch, terraform.workspace)}"
+        # BranchName       = "master"
+        # "OutputArtifactFormat" = "CODE_ZIP"
       }
     }
   }
@@ -90,16 +101,19 @@ resource "aws_codepipeline" "ecs_container_pipeline" {
     name = "Build"
 
     action {
-      name             = "Build"
       category         = "Build"
+      name             = "DockerBuild"
       owner            = "AWS"
       provider         = "CodeBuild"
-      input_artifacts  = ["source_output_ecs_cluster"]
-      output_artifacts = ["build_output_ecs_cluster"]
+      input_artifacts  = ["backend_${terraform.workspace}_source_output"]
+      output_artifacts = ["backend_${terraform.workspace}_build_output"]
       version          = "1"
 
+      ## some variables here for the environment
+
       configuration = {
-        ProjectName = "${var.name}-build"
+        ProjectName         = "lazzaro-back-build-${terraform.workspace}"
+        EnvironmentVariables = "[{\"name\":\"environment\",\"value\":\"#{${var.source_namespace}.BranchName}\",\"type\":\"PLAINTEXT\"}]"
       }
     }
   }
@@ -110,24 +124,25 @@ resource "aws_codepipeline" "ecs_container_pipeline" {
 
     action {
       category        = "Deploy"
-      name            = "Deploy"
+      name            = "ECSDeploy"
       owner           = "AWS"
       provider        = "ECS"
       version         = "1"
-      input_artifacts = ["build_output_ecs_cluster"]
-      
+      input_artifacts = ["backend_${terraform.workspace}_build_output"]
+
       configuration = {
-        "ClusterName" = "lazzaro-cluster"
-        "ServiceName" = "service-v2-ecs-cluster" # this need to be dynamic
-        "FileName"    = "imagedefinitions.json"
+        "ClusterName" = "lazzaro-back-cluster-${terraform.workspace}"
+        "ServiceName" = "lazzaro-back-service-${terraform.workspace}"
+        "FileName"    = "imagedefinitions.json" # why do I need this?
       }
     }
   }
 
   tags = {
-    Name          = "${var.name}-pipeline"
+    Name          = "lazzaro-back-pipeline-${terraform.workspace}"
     Template      = var.template
     Creation_Date = var.created-on
     Purpose       = var.purpose
   }
 }
+

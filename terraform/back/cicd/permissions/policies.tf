@@ -1,10 +1,21 @@
+data "terraform_remote_state" "ecr_arn" {
+  backend = "s3"
+  config = {
+    bucket = "terraform-state-lazzaro"
+    key    = "env:/${terraform.workspace}/back/infra/ecr_cluster_logs.tfstate"
+    region = "eu-central-1"
+  }
+}
+
+
 resource "aws_s3_bucket" "ecs-s3-pipeline" {
-  bucket = "${var.name}-pipeline-bucket"
-  acl    = "private"
+  bucket        = "lazzaro-back-s3-pipeline-artifacts-${terraform.workspace}"
+  acl           = "private"
+  force_destroy = true
 }
 
 resource "aws_iam_role" "ecs-build-role" {
-  name = "${var.name}-build-role"
+  name = "lazzaro-back-iam-build-${terraform.workspace}"
 
   assume_role_policy = <<EOF
 {
@@ -52,10 +63,10 @@ resource "aws_iam_role_policy" "ecs-build-policy" {
                 "s3:GetObjectVersion"
             ],
             "Resource": [
-                "arn:aws:ecr:eu-central-1:648410456371:repository/ecr-dev-ecs-cluster",
+                "${data.terraform_remote_state.ecr_arn.outputs.ecr_arn}",
                 "arn:aws:secretsmanager:eu-central-1:648410456371:secret:dockerToken-XYhC3a",
-                "arn:aws:s3:::ecs-cluster-pipeline-bucket",
-                "arn:aws:s3:::ecs-cluster-pipeline-bucket/*"
+                "${aws_s3_bucket.ecs-s3-pipeline.arn}",
+                "${aws_s3_bucket.ecs-s3-pipeline.arn}/*"
             ]
         },
         {
@@ -81,7 +92,7 @@ POLICY
 }
 
 resource "aws_iam_role" "ecs-pipeline-role" {
-  name = "${var.name}-pipeline-role"
+  name = "lazzaro-back-iam-pipeline-${terraform.workspace}"
 
   assume_role_policy = <<EOF
 {
@@ -180,20 +191,6 @@ resource "aws_iam_role_policy" "ecs-pipeline-policy" {
 },
 {
     "Action": [
-        "opsworks:CreateDeployment",
-        "opsworks:DescribeApps",
-        "opsworks:DescribeCommands",
-        "opsworks:DescribeDeployments",
-        "opsworks:DescribeInstances",
-        "opsworks:DescribeStacks",
-        "opsworks:UpdateApp",
-        "opsworks:UpdateStack"
-    ],
-    "Resource": "*",
-    "Effect": "Allow"
-},
-{
-    "Action": [
         "cloudformation:CreateStack",
         "cloudformation:DeleteStack",
         "cloudformation:DescribeStacks",
@@ -221,29 +218,6 @@ resource "aws_iam_role_policy" "ecs-pipeline-policy" {
 {
     "Effect": "Allow",
     "Action": [
-        "devicefarm:ListProjects",
-        "devicefarm:ListDevicePools",
-        "devicefarm:GetRun",
-        "devicefarm:GetUpload",
-        "devicefarm:CreateUpload",
-        "devicefarm:ScheduleRun"
-    ],
-    "Resource": "*"
-},
-{
-    "Effect": "Allow",
-    "Action": [
-        "servicecatalog:ListProvisioningArtifacts",
-        "servicecatalog:CreateProvisioningArtifact",
-        "servicecatalog:DescribeProvisioningArtifact",
-        "servicecatalog:DeleteProvisioningArtifact",
-        "servicecatalog:UpdateProduct"
-    ],
-    "Resource": "*"
-},
-{
-    "Effect": "Allow",
-    "Action": [
         "cloudformation:ValidateTemplate"
     ],
     "Resource": "*"
@@ -252,24 +226,6 @@ resource "aws_iam_role_policy" "ecs-pipeline-policy" {
     "Effect": "Allow",
     "Action": [
         "ecr:DescribeImages"
-    ],
-    "Resource": "*"
-},
-{
-    "Effect": "Allow",
-    "Action": [
-        "states:DescribeExecution",
-        "states:DescribeStateMachine",
-        "states:StartExecution"
-    ],
-    "Resource": "*"
-},
-{
-    "Effect": "Allow",
-    "Action": [
-        "appconfig:StartDeployment",
-        "appconfig:StopDeployment",
-        "appconfig:GetDeployment"
     ],
     "Resource": "*"
 }

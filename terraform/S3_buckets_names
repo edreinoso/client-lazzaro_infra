@@ -1,0 +1,20 @@
+S3 Buckets
+== =======
+
+pipeline logs
+    lazzaro-back-s3-pipeline-artifacts-pre
+    lazzaro-back-s3-pipeline-artifacts-prod
+
+
+load balancer logs
+    back
+        lazzaro-back-s3-prod ##
+        lazzaro-back-s3-alb-logs-prod
+    front
+        default: load-balancer-lazzaro
+        lazzaro-front-s3-alb-logs-pre
+
+
+frontend
+    lazzaro-ongs-template-artifacts
+    lazzaro-ongs-template-bucket

@@ -23,3 +23,15 @@ variable "username" {
   default = "edreinoso23"
 }
 
+variable "branch" {
+  type = map
+  default = {
+    prod = "prod"
+    pre = "pre"
+  }
+}
+
+variable "source_namespace" {
+  type = string
+  default = "SourceVariable"
+}

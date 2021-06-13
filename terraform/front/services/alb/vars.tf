@@ -8,6 +8,7 @@
         type = map
         default = {
           default = "default-frontend"
+          pre = "helloworld"
           prod = "frontend"
         }
     }
@@ -68,7 +69,8 @@
 ## S3 ##
   variable "bucket-name" {
     type    = string
-    default = "load-balancer-lazzaro"
+    default = "lazzaro-front-s3-alb-logs" # pre
+    # default = "load-balancer-lazzaro" # prod
   }
 
   variable "acl" {

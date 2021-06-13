@@ -41,7 +41,7 @@
 ## S3 ##
   variable "bucket-name" {
     type    = string
-    default = "lazzaro-back-s3"
+    default = "lazzaro-back-s3-alb-logs"
     # default = "tf-ecs-load-balancer-lazzaro"
   }
 

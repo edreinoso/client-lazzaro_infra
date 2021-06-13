@@ -19,6 +19,7 @@ provider:
   stage: dev
   region: eu-central-1
   environment:
+    environment: ${env:environment}
     vpc_id: ${env:vpc_id}
     role: ${env:role}
     image: ${env:image}
