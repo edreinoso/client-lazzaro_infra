@@ -26,15 +26,12 @@ def isValidString(string):
 def build_process(port_n, name, parsedTime):
     build = codebuild_client.start_build(
         projectName='frontend-code-build-service',
+        # projectName='frontend-code-build-service-'+os.environ['environment'],
         environmentVariablesOverride=[
             {
                 'name': 'port',
                 'value': port_n,
             },
-            # {
-            #     'name': 'environment',
-            #     'value': env,
-            # },
             {
                 'name': 'ong_name',
                 'value': name,

@@ -4,6 +4,9 @@ import boto3
 import botocore
 from boto3.dynamodb.conditions import Key
 import logging
+import sys
+sys.path.append("./classes")
+from params import get_params
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -17,103 +20,13 @@ sg_client = boto3.client('ec2')
 log_client = boto3.client('logs')
 r53_client = boto3.client('route53')
 table = dynamodb.Table('frontend-ddb-client')
-ssm_params = boto3.client('ssm')
 
-# Getting the infra parameters from SSM Parameter Store
-def get_all_params(env):
-    dict_of_params = {}
-    
-    ### network
-    ## getting vpc id
-    vpc_id = ssm_params.get_parameter(
-        Name='/prod/share/network/vpc/vpc_id',
-    )
-    dict_of_params['vpc_id'] = vpc_id
-
-    ## getting subnet id - 2 a
-    client_subnet_2_a = ssm_params.get_parameter(
-        Name='/prod/share/network/subnet/client_subnet_2_a',
-    )
-    dict_of_params['client_subnet_2_a'] = client_subnet_2_a
-    ## getting subnet id - 2 b
-    client_subnet_2_b = ssm_params.get_parameter(
-        Name='/prod/share/network/subnet/client_subnet_2_b',
-    )
-    dict_of_params['client_subnet_2_b'] = client_subnet_2_b
-    ## getting subnet id - 3 a
-    client_subnet_3_a = ssm_params.get_parameter(
-        Name='/prod/share/network/subnet/client_subnet_3_a',
-    )
-    dict_of_params['client_subnet_3_a'] = client_subnet_3_a
-    ## getting subnet id - 3 b
-    client_subnet_3_b = ssm_params.get_parameter(
-        Name='/prod/share/network/subnet/client_subnet_3_b',
-    )
-    dict_of_params['client_subnet_3_b'] = client_subnet_3_b
-    
-    ### ecs
-    ## role
-    role_arn = ssm_params.get_parameter(
-        Name='/'+env+'/front/services/ecs/role_arn',
-    )
-    dict_of_params['role_arn'] = role_arn
-    ## repo name
-    repo_name = ssm_params.get_parameter(
-        Name='/'+env+'/front/services/ecs/repo_name',
-    )
-    dict_of_params['repo_name'] = repo_name
-    ## cluster arn
-    cluster_arn = ssm_params.get_parameter(
-        Name='/'+env+'/front/services/ecs/cluster_arn',
-    )
-    dict_of_params['cluster_arn'] = cluster_arn
-    ## image
-    image = ssm_params.get_parameter(
-        Name='/'+env+'/front/services/ecs/image',
-    )
-    dict_of_params['image'] = image
-    ## container name
-    container = ssm_params.get_parameter(
-        Name='/'+env+'/front/services/ecs/container',
-    )
-    dict_of_params['container'] = container
-
-    ### elb
-    ## arn
-    alb_arn = ssm_params.get_parameter(
-        Name='/'+env+'/front/services/elb/alb_arn',
-    )
-    dict_of_params['alb_arn'] = alb_arn
-    ## dns
-    alb_dns = ssm_params.get_parameter(
-        Name='/'+env+'/front/services/elb/alb_dns',
-    )
-    dict_of_params['alb_dns'] = alb_dns
-    ## zone
-    alb_zone = ssm_params.get_parameter(
-        Name='/'+env+'/front/services/elb/alb_zone',
-    )
-    dict_of_params['alb_zone'] = alb_zone
-    ## sg
-    alb_sg = ssm_params.get_parameter(
-        Name='/'+env+'/front/services/elb/alb_sg',
-    )
-    dict_of_params['alb_sg'] = alb_sg
-    ## certificate
-    certificate_arn = ssm_params.get_parameter(
-        Name='/'+env+'/front/services/elb/certificate_arn',
-    )
-    dict_of_params['certificate_arn'] = certificate_arn
-
-    print(dict_of_params)
-
-    return dict_of_params
-
-def handle_service_creation(client):
-# def handle_service_creation(client, params):
-    image = os.environ['image']+client
-    # image = params['image']+client
-    containerName = os.environ['containerName']+client
+# def handle_service_creation(client):
+def handle_service_creation(client, params):
+    # image = os.environ['image']+client
+    image = params['image']+client
+    # containerName = os.environ['containerName']+client
+    containerName = params['container']+client
 
     # get stuff from dynamodb
     query = table.query(
@@ -164,7 +77,8 @@ def handle_service_creation(client):
     targetg = elb_client.create_target_group(
         Name=client,  # dynamic name based on ngo
         Port=int(port),
-        VpcId=os.environ['vpc_id'],  # this could probably be hardcoded
+        # VpcId=os.environ['vpc_id'],
+        VpcId=params['vpc_id'],
         Protocol='HTTP',  # this could possibly be dynamic
         HealthCheckPath='/healthcheck',
         HealthCheckPort=port,
@@ -179,7 +93,8 @@ def handle_service_creation(client):
     logger.info("3. Checking to see if there's a Listener")
     # checking for listener
     describe_listener_response = elb_client.describe_listeners(
-        LoadBalancerArn=os.environ['lb_arn'],
+        # LoadBalancerArn=os.environ['lb_arn'],
+        LoadBalancerArn=params['alb_arn'],
     )
 
     listener_arn = ''
@@ -187,13 +102,15 @@ def handle_service_creation(client):
         logger.info("3a. Creating Listener")
         # listener
         listener = elb_client.create_listener(
-            LoadBalancerArn=os.environ['lb_arn'],
+            # LoadBalancerArn=os.environ['lb_arn'],
+            LoadBalancerArn=params['alb_arn'],
             Protocol='HTTPS',
             Port=443,
             SslPolicy='ELBSecurityPolicy-2016-08',
             Certificates=[
                 {
-                    'CertificateArn': os.environ['certificateArn'],
+                    # 'CertificateArn': os.environ['certificateArn'],
+                    'CertificateArn': params['certificate_arn'],
                 },
             ],
             DefaultActions=[
@@ -256,7 +173,8 @@ def handle_service_creation(client):
         create_sg = sg_client.create_security_group(
             GroupName=client+'_sg',
             Description='security group for client: '+client,
-            VpcId=os.environ['vpc_id'],
+            # VpcId=os.environ['vpc_id'],
+            VpcId=params['vpc_id'],
             # TagSpecifications=[
             #     {
             #         'ResourceType': 'security-group',
@@ -275,7 +193,8 @@ def handle_service_creation(client):
                     'UserIdGroupPairs': [
                         {
                             'Description': 'allowing traffic from elb',
-                            'GroupId': os.environ['elb_sg'],
+                            # 'GroupId': os.environ['elb_sg'],
+                            'GroupId': params['alb_sg'],
                         },
                     ]
                 },
@@ -306,7 +225,8 @@ def handle_service_creation(client):
                             'UserIdGroupPairs': [
                                 {
                                     'Description': 'allowing traffic from elb',
-                                    'GroupId': os.environ['elb_sg'],
+                                    # 'GroupId': os.environ['elb_sg'],
+                                    'GroupId': params['alb_sg'],
                                 },
                             ]
                         },
@@ -327,7 +247,8 @@ def handle_service_creation(client):
     # task definition
     task_definition = ecs_client.register_task_definition(
         family='task_definition_'+client,
-        executionRoleArn=os.environ['role'],
+        # executionRoleArn=os.environ['role'],
+        executionRoleArn=params['role_arn'],
         networkMode='awsvpc',
         containerDefinitions=[
             {
@@ -361,7 +282,8 @@ def handle_service_creation(client):
     # service
     try:
         ecs_client.create_service(
-            cluster=os.environ['cluster'],
+            # cluster=os.environ['cluster'],
+            cluster=params['cluster_arn'],
             serviceName='service_'+client,
             taskDefinition='task_definition_'+client,
             loadBalancers=[
@@ -381,8 +303,12 @@ def handle_service_creation(client):
             networkConfiguration={
                 'awsvpcConfiguration': {
                     'subnets': [
-                        os.environ['pub_subnet_a'],
-                        os.environ['pub_subnet_b']
+                        # os.environ['pub_subnet_a'],
+                        params['client_subnet_2_a'],
+                        # os.environ['pub_subnet_b']
+                        params['client_subnet_2_b'],
+                        params['client_subnet_3_a'],
+                        params['client_subnet_3_b']
                     ],
                     'securityGroups': [
                         sg_id,
@@ -428,9 +354,11 @@ def handle_service_creation(client):
                             'Type': 'A',
                             'AliasTarget': {
                                 # zone of the load balancer
-                                'HostedZoneId': os.environ['elbHostedZoneId'],
+                                # 'HostedZoneId': os.environ['elbHostedZoneId'],
+                                'HostedZoneId': params['alb_zone'],
                                 # need dns of balancer
-                                'DNSName': os.environ['dnsName'],
+                                # 'DNSName': os.environ['dnsName'],
+                                'DNSName': params['alb_dns'],
                                 'EvaluateTargetHealth': True
                             },
                         }
@@ -477,17 +405,20 @@ def handle_service_creation(client):
     )
 
 def handler(event, context):
-    params = get_all_params(os.environ['environment'])
+    new_params = get_params()
+
+    ## getting the parameters
+    params = new_params.handler(os.environ['environment'])
 
     print(params)
-
+    
     # getting client from s3 event
     key = event['Records'][0]['s3']['object']['key']
     obj = key.split('/')[1]
     client = obj.split('.')[0]
 
     print("Client: ", client)
-    # handle_service_creation(client)
+    handle_service_creation(client, params)
 
     return {
         'statusCode': 200,

@@ -4,6 +4,10 @@ import boto3
 import botocore
 from boto3.dynamodb.conditions import Key
 import logging
+import sys
+sys.path.append("./classes")
+from params import get_params
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -18,10 +22,7 @@ ecr_client = boto3.client('ecr')
 codebuild_client = boto3.client('codebuild')
 r53_client = boto3.client('route53')
 
-# def handling_service_deletion(client, target_arn, buildid, taskd_arn, security_group_id):
-
-
-def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, security_group_id):
+def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, security_group_id, params):
     # def handling_service_deletion(client, buildid):
     logger.info('Handling service deletion')
 
@@ -67,7 +68,8 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     # service
     try:
         ecs_client.delete_service(
-            cluster=os.environ['cluster'],
+            # cluster=os.environ['cluster'],
+            cluster=params['cluster_arn'],
             service='service_'+client,
             force=True
         )
@@ -109,7 +111,8 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     try:
         ecr_client.batch_delete_image(
             registryId=os.environ['account_id'],
-            repositoryName=os.environ['repositoryName'],
+            # repositoryName=os.environ['repositoryName'],
+            repositoryName=params['repo_name'],
             imageIds=[
                 {
                     'imageTag': client
@@ -151,9 +154,11 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
                             'Type': 'A',
                             'AliasTarget': {
                                 # zone of the load balancer
-                                'HostedZoneId': os.environ['elbHostedZoneId'],
+                                # 'HostedZoneId': os.environ['elbHostedZoneId'],
+                                'HostedZoneId': params['alb_zone'],
                                 # need dns of balancer
-                                'DNSName': os.environ['dnsName'],
+                                # 'DNSName': os.environ['dnsName'],
+                                'DNSName': params['alb_dns'],
                                 'EvaluateTargetHealth': True
                             },
                         }
@@ -190,6 +195,15 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
 
 def handler(event, context):
     # boto3 init
+    print('delete sample')
+
+    new_params = get_params()
+
+    ## getting the parameters
+    params = new_params.handler(os.environ['environment'])
+
+    print(params)
+    
     if(event['Records'][0]['eventName'] == "REMOVE"):
         logger.info(event['Records'][0])  # need to judge whether there is
         # declaration of variables
@@ -204,11 +218,11 @@ def handler(event, context):
         # calling service deletion function
         # handling_service_deletion(client, target_arn, buildid, taskd_arn, security_group_id)
         handling_service_deletion(
-            client, rule_arn, target_arn, buildid, taskd_arn, security_group_id)
+            client, rule_arn, target_arn, buildid, taskd_arn, security_group_id, params)
         # handling_service_deletion(client, buildid) # this is an empty build
     else:
         logger.info("Stream was not REMOVE")
-        # logger.info("Stream was,: %s instead of REMOVED", event['Records'][0]['eventName'])
+        logger.info("Stream was,: %s instead of REMOVED", event['Records'][0]['eventName'])
 
     return {
         'statusCode': 200,

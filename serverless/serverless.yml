@@ -17,25 +17,17 @@ provider:
   name: aws
   runtime: python3.6
   stage: dev
+  # stage: ${env:environment}
   region: eu-central-1
   environment:
     environment: ${env:environment}
-    vpc_id: ${env:vpc_id}
-    role: ${env:role}
-    image: ${env:image}
-    containerName: ${env:containerName}
-    cluster: ${env:cluster}
-    pub_subnet_a: ${env:pub_subnet_a}
-    pub_subnet_b: ${env:pub_subnet_b}
-    service_sg: ${env:service_sg}
-    certificateArn: ${env:certificateArn}
     bucket: ${env:bucket}
 
 functions:
   ## Creation process
   client:
     handler: wsgi_handler.handler
-    role: arn:aws:iam::648410456371:role/frontend-client-gateway-role
+    role: arn:aws:iam::648410456371:role/front_test_delete_soon
     events:
       - http:
           path: "/createclient"
@@ -47,30 +39,29 @@ functions:
   ## Creation process
   createservice:
     handler: artifacts.handler
-    role: arn:aws:iam::648410456371:role/frontend-create-lambda-service-role
+    role: arn:aws:iam::648410456371:role/front_test_delete_soon
     timeout: 60
     events:
       - s3:
-          bucket: lazzaro-ongs-template-artifacts
+          bucket: lazzaro-ongs-template-artifacts-${env:environment}
           event: s3:ObjectCreated:Put
   
   ## Deletion process
   removeservice:
     handler: stream.handler
-    role: arn:aws:iam::648410456371:role/frontend-delete-lambda-service-role
+    role: arn:aws:iam::648410456371:role/front_test_delete_soon
     timeout: 45
     events:
       - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502
   
   ## Test ssm parameter retrieval
-  # testservice:
-  #   handler: testdeploy.handler
-  #   role: arn:aws:iam::648410456371:role/frontend-create-lambda-service-role
-  #   timeout: 30
+  testservice:
+    handler: testdeploy.handler
+    role: arn:aws:iam::648410456371:role/front_test_delete_soon
+    timeout: 30
 
-resources:
-  - ${file(resources/codebuild-role.yml)}
-  - ${file(resources/client-gateway-permission.yml)}
-  - ${file(resources/create-permission.yml)}
-  - ${file(resources/delete-permission.yml)}
-  # - ${file(resources/test-permission.yml)}
+# resources:
+#   - ${file(resources/codebuild-role.yml)}
+#   - ${file(resources/client-gateway-permission.yml)}
+#   - ${file(resources/create-permission.yml)}
+#   - ${file(resources/delete-permission.yml)}
