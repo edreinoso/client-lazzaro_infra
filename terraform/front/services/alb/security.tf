@@ -1,18 +1,16 @@
 ##### ELB SG #####
   resource "aws_security_group" "elb-security-group" {
-    name        = "alb-front-sg-${terraform.workspace}" # pre
-    # name        = "elb-sg-${terraform.workspace}-${lookup(var.name, terraform.workspace)}" # prod
+    name        = "elb-sg-${terraform.workspace}-${lookup(var.name, terraform.workspace)}"
     description = "ELB security group for ${lookup(var.name, terraform.workspace)} in ${terraform.workspace}"
     vpc_id      = element(data.terraform_remote_state.network.outputs.vpc-id, 1)
 
     tags = {
-      Name          = "alb-front-sg-${terraform.workspace}" # pre
-      # Name          = "lb-${terraform.workspace}-${lookup(var.name, terraform.workspace)}" # prod
+      Name          = "lb-${terraform.workspace}-${lookup(var.name, terraform.workspace)}"
       Template      = var.template
       Purpose       = "Security groups for load balancer"
       Protocol      = "HTTPS"
       Creation_Date = var.created-on
-      Environment   = terraform.workspace
+      Environment = terraform.workspace
     }
   }
 

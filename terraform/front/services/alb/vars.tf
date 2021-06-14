@@ -69,8 +69,8 @@
 ## S3 ##
   variable "bucket-name" {
     type    = string
-    default = "lazzaro-front-s3-alb-logs" # pre
-    # default = "load-balancer-lazzaro" # prod
+    # default = "lazzaro-front-s3-alb-logs" # pre
+    default = "load-balancer-lazzaro" # prod
   }
 
   variable "acl" {

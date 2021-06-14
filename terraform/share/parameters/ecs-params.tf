@@ -8,6 +8,16 @@ data "terraform_remote_state" "ecs_service" {
   }
 }
 
+data "terraform_remote_state" "ecs_role" {
+  backend = "s3"
+  config = {
+    bucket = "terraform-state-lazzaro"
+    # key    = "env:/${terraform.workspace}/permissions_role_ecs_front.tfstate" # pre
+    key    = "permissions_role_ecs_front.tfstate" # prod
+    region = "eu-central-1"
+  }
+}
+
 
 # dynamic variables according to the environment
 ## ecr repo name
@@ -35,5 +45,12 @@ resource "aws_ssm_parameter" "image" {
 resource "aws_ssm_parameter" "container" {
   name  = "/${terraform.workspace}/front/services/ecs/container"
   type  = "String"
-  value = "ecs-cluster-${terraform.workspace}"
+  value = "ecs-cluster-${terraform.workspace}-"
+}
+
+## role arn
+resource "aws_ssm_parameter" "role" {
+  name  = "/${terraform.workspace}/front/services/ecs/role_arn"
+  type  = "String"
+  value = data.terraform_remote_state.ecs_role.outputs.ecs_role_arn
 }

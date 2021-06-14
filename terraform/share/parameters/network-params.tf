@@ -20,20 +20,20 @@ resource "aws_ssm_parameter" "vpc_id" {
 resource "aws_ssm_parameter" "client_subnet_2_a" {
   name  = "/${terraform.workspace}/share/network/subnet/client_subnet_2_a"
   type  = "String"
-  value = element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-a, 1),0,)
+  value = element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-a, 0),1,)
 }
 resource "aws_ssm_parameter" "client_subnet_2_b" {
   name  = "/${terraform.workspace}/share/network/subnet/client_subnet_2_b"
   type  = "String"
-  value = element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 2),0,)
+  value = element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 0),1,)
 }
 resource "aws_ssm_parameter" "client_subnet_3_a" {
   name  = "/${terraform.workspace}/share/network/subnet/client_subnet_3_a"
   type  = "String"
-  value = element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 1),0,)
+  value = element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-a, 0),2,)
 }
 resource "aws_ssm_parameter" "client_subnet_3_b" {
   name  = "/${terraform.workspace}/share/network/subnet/client_subnet_3_b"
   type  = "String"
-  value = element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 2),0,)
+  value = element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 0),2,)
 }

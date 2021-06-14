@@ -3,3 +3,6 @@ alias prod_elb='cp ./test/prod_elb.txt ./elb.tf; cp ./test/prod_sg.txt security.
 
 alias prod_ecs='cp ./test/prod_infra.txt ./infra.tf'
 alias pre_ecs='cp ./test/pre_infra.txt ./infra.tf'
+
+alias prod_iam='cp ./test/prod_iam.txt ./permissions.tf'
+alias pre_iam='cp ./test/pre_iam.txt ./permissions.tf'
