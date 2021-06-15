@@ -11,19 +11,22 @@ resource "aws_iam_role" "createservice_permission" {
       Statement = [
         {
           Action   = [
-            "logs:CreateLogGroup"
-          ]
-          Effect   = "Allow"
-          Resource = "arn:aws:logs:eu-central-1:648410456371:*"
-        },
-        {
-          Action   = [
+            "logs:CreateLogGroup",
             "logs:PutLogEvents",
             "logs:CreateLogStream"
           ]
           Effect   = "Allow"
-          Resource = "arn:aws:logs:eu-central-1:648410456371:log-group:/aws/lambda/frontend-ecs-services-${terraform.workspace}-client:*"
+          Resource = "*"
         },
+        # {
+        #   Action   = [
+        #   ]
+        #   Effect   = "Allow"
+        #   Resource: [
+        #     "arn:aws:logs:eu-central-1:648410456371:log-group:frontend-ecs-services-${terraform.workspace}-createservice:log-stream:*",
+        #     "arn:aws:logs:eu-central-1:648410456371:log-group:frontend-ecs-services-${terraform.workspace}-createservice"
+        #   ]
+        # },
       ]
     })
   }
@@ -118,6 +121,23 @@ resource "aws_iam_role" "createservice_permission" {
           Effect   = "Allow"
           Resource = "*"
         },
+      ]
+    })
+  }
+  # ssm
+  inline_policy {
+    name = "ssm"
+
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action   = [
+            "ssm:GetParameter"
+          ]
+          Effect   = "Allow"
+          Resource = "arn:aws:ssm:eu-central-1:648410456371:parameter/*"
+        }
       ]
     })
   }

@@ -41,5 +41,5 @@ resource "aws_ssm_parameter" "alb_sg" {
 resource "aws_ssm_parameter" "certifiacte_arn" {
   name  = "/${terraform.workspace}/front/services/elb/certificate_arn"
   type  = "String"
-  value = "	arn:aws:acm:eu-central-1:648410456371:certificate/c46c4e19-264a-4c50-9f10-f85d95a182c3"
+  value = "arn:aws:acm:eu-central-1:648410456371:certificate/c46c4e19-264a-4c50-9f10-f85d95a182c3"
 }

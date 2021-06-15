@@ -27,7 +27,7 @@ functions:
   ## Creation process
   client:
     handler: wsgi_handler.handler
-    role: arn:aws:iam::648410456371:role/front_test_delete_soon
+    role: arn:aws:iam::648410456371:role/frontend-client-gateway-role-${env:environment}
     events:
       - http:
           path: "/createclient"
@@ -39,7 +39,7 @@ functions:
   ## Creation process
   createservice:
     handler: artifacts.handler
-    role: arn:aws:iam::648410456371:role/front_test_delete_soon
+    role: arn:aws:iam::648410456371:role/frontend-create-lambda-service-role-${env:environment}
     timeout: 60
     events:
       - s3:
@@ -49,7 +49,7 @@ functions:
   ## Deletion process
   removeservice:
     handler: stream.handler
-    role: arn:aws:iam::648410456371:role/front_test_delete_soon
+    role: arn:aws:iam::648410456371:role/frontend-delete-lambda-service-role-${env:environment}
     timeout: 45
     events:
       # how to dynamically configure based on events

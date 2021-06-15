@@ -21,11 +21,8 @@ log_client = boto3.client('logs')
 r53_client = boto3.client('route53')
 table = dynamodb.Table(os.environ['ddbTable'])
 
-# def handle_service_creation(client):
 def handle_service_creation(client, params):
-    # image = os.environ['image']+client
     image = params['image']+client
-    # containerName = os.environ['containerName']+client
     containerName = params['container']+client
 
     # get stuff from dynamodb
@@ -36,8 +33,6 @@ def handle_service_creation(client, params):
     # assigning port and date vars
     port = query['Items'][0]['Port']
     date = query['Items'][0]['Date']
-
-    # print(query, port, date)
 
     # tags
     # is this allowed?
@@ -54,6 +49,10 @@ def handle_service_creation(client, params):
             'Key': 'Date',
             'Value': date
         },
+        {
+            'Key': 'Environment',
+            'Value': os.environ['environment']
+        }
     ]
 
     # create
@@ -77,11 +76,10 @@ def handle_service_creation(client, params):
     logger.info("2. Creating Target Groups")
     # target groups
     targetg = elb_client.create_target_group(
-        Name=client,  # dynamic name based on ngo
+        Name=client,
         Port=int(port),
-        # VpcId=os.environ['vpc_id'],
         VpcId=params['vpc_id'],
-        Protocol='HTTP',  # this could possibly be dynamic
+        Protocol='HTTP',
         HealthCheckPath='/healthcheck',
         HealthCheckPort=port,
         TargetType='ip',
@@ -95,7 +93,6 @@ def handle_service_creation(client, params):
     logger.info("3. Checking to see if there's a Listener")
     # checking for listener
     describe_listener_response = elb_client.describe_listeners(
-        # LoadBalancerArn=os.environ['lb_arn'],
         LoadBalancerArn=params['alb_arn'],
     )
 
@@ -136,37 +133,66 @@ def handle_service_creation(client, params):
     )
 
     logger.info("4. Creating Listener Rule")
-    print(rules['Rules'])
-    print('rule number: ', int(rules['Rules']
-          [len(rules['Rules'])-2]['Priority'])+1)
-    # create listener rule
-    listener_rule = elb_client.create_rule(
-        ListenerArn=listener_arn,
-        Conditions=[
-            {
-                'Field': 'host-header',
-                'Values': [
-                    client+'.web.lazzaro.io'
-                ]
-            },
-        ],
-        Priority=int(rules['Rules'][len(rules['Rules'])-2]['Priority'])+1,
-        Actions=[
-            {
-                'Type': 'forward',
-                'TargetGroupArn': target_arn,
-                'ForwardConfig': {
-                    'TargetGroups': [
-                        {
-                            'TargetGroupArn': target_arn,
-                        },
+    rule_arn=''
+    if(len(rules['Rules']) < 2):
+        #priority should be 1
+        print('priority should be 1')
+        listener_rule = elb_client.create_rule(
+            ListenerArn=listener_arn,
+            Conditions=[
+                {
+                    'Field': 'host-header',
+                    'Values': [
+                        client+'.web.lazzaro.io'
                     ]
-                }
-            },
-        ],
-        Tags=tags
-    )
-    rule_arn = listener_rule['Rules'][0]['RuleArn']
+                },
+            ],
+            Priority=1,
+            Actions=[
+                {
+                    'Type': 'forward',
+                    'TargetGroupArn': target_arn,
+                    'ForwardConfig': {
+                        'TargetGroups': [
+                            {
+                                'TargetGroupArn': target_arn,
+                            },
+                        ]
+                    }
+                },
+            ],
+        )
+        rule_arn = listener_rule['Rules'][0]['RuleArn']
+    else:
+        #priority should be len+1
+        print('rule number: ', int(
+            rules['Rules'][len(rules['Rules'])-2]['Priority'])+1)
+        listener_rule = elb_client.create_rule(
+            ListenerArn=listener_arn,
+            Conditions=[
+                {
+                    'Field': 'host-header',
+                    'Values': [
+                        client+'.web.lazzaro.io'
+                    ]
+                },
+            ],
+            Priority=int(rules['Rules'][len(rules['Rules'])-2]['Priority'])+1,
+            Actions=[
+                {
+                    'Type': 'forward',
+                    'TargetGroupArn': target_arn,
+                    'ForwardConfig': {
+                        'TargetGroups': [
+                            {
+                                'TargetGroupArn': target_arn,
+                            },
+                        ]
+                    }
+                },
+            ],
+        )
+        rule_arn = listener_rule['Rules'][0]['RuleArn']
 
     logger.info("5. Creating Security Group")
     sg_id = ''
@@ -175,7 +201,6 @@ def handle_service_creation(client, params):
         create_sg = sg_client.create_security_group(
             GroupName=client+'_sg',
             Description='security group for client: '+client,
-            # VpcId=os.environ['vpc_id'],
             VpcId=params['vpc_id'],
             # TagSpecifications=[
             #     {
@@ -195,7 +220,6 @@ def handle_service_creation(client, params):
                     'UserIdGroupPairs': [
                         {
                             'Description': 'allowing traffic from elb',
-                            # 'GroupId': os.environ['elb_sg'],
                             'GroupId': params['alb_sg'],
                         },
                     ]
@@ -329,6 +353,10 @@ def handle_service_creation(client, params):
                     'key': 'Date',
                     'value': date
                 },
+                {
+                    'key': 'Environment',
+                    'value': os.environ['environment']
+                },
             ],
             propagateTags='SERVICE',
         )
@@ -350,7 +378,7 @@ def handle_service_creation(client, params):
                     {
                         'Action': 'CREATE',
                         'ResourceRecordSet': {
-                            'Name': 'pre'+client+'.web.lazzaro.io',
+                            'Name': client+'.web.lazzaro.io',
                             'Type': 'A',
                             'AliasTarget': {
                                 # zone of the load balancer
@@ -370,7 +398,6 @@ def handle_service_creation(client, params):
             logger.warn('Record set already exists')
         else:
             raise error
-    #
 
     logger.info("9. Updating Item in DDB table")
     # update item to include more attributes

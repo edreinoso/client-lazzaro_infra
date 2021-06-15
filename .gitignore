@@ -1,3 +1,4 @@
 .env
-
+.env.pre
+.env.prod
 .terraform

@@ -23,7 +23,6 @@ codebuild_client = boto3.client('codebuild')
 r53_client = boto3.client('route53')
 
 def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, security_group_id, params):
-    # def handling_service_deletion(client, buildid):
     logger.info('Handling service deletion')
 
     # delete
@@ -51,6 +50,8 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
         else:
             raise error
 
+    
+
     logger.info('3. Deleting Target Group')
     # target groups
     try:
@@ -61,6 +62,8 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     except botocore.exceptions.ClientError as error:
         if error.response['Error']['Code'] == 'ValidationError':
             logger.warn('A target group ARN must be specified')
+        elif error.response['Error']['Code'] == 'ResourceInUse':
+            logger.warn('Target group is currently in used by a listener')
         else:
             raise error
 
@@ -174,6 +177,8 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
 
     logger.info('10. Deleting Security Group')
     # security group
+    # this needs to be changed to invoke a eventbridge
+    # should pass a cron of 5 minutes from now
     try:
         sg_client.delete_security_group(
             GroupId=security_group_id
@@ -195,8 +200,6 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
 
 def handler(event, context):
     # boto3 init
-    print('delete sample')
-
     new_params = get_params()
 
     ## getting the parameters

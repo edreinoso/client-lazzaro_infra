@@ -2,8 +2,8 @@ data "terraform_remote_state" "ecs_service" {
   backend = "s3"
   config = {
     bucket = "terraform-state-lazzaro"
-    # key    = "env:/${terraform.workspace}/infra_front.tfstate" # pre
-    key    = "infra_front.tfstate" # prod
+    key    = "env:/${terraform.workspace}/infra_front.tfstate" # pre
+    # key    = "infra_front.tfstate" # prod
     region = "eu-central-1"
   }
 }
@@ -24,7 +24,7 @@ data "terraform_remote_state" "ecs_role" {
 resource "aws_ssm_parameter" "repository_name" {
   name  = "/${terraform.workspace}/front/services/ecs/repo_name"
   type  = "String"
-  value = "lazzaro-front-repo"
+  value = "lazzaro-front-repo-${terraform.workspace}"
 }
 
 ## cluster arn

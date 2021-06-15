@@ -5,19 +5,29 @@ resource "aws_iam_role" "removeservice_permission" {
   # logs
   inline_policy {
     name = "logs"
-
     policy = jsonencode({
       Version = "2012-10-17"
       Statement = [
         {
           Action   = [
             "logs:CreateLogGroup",
-            "logs:CreateLogStream",
-            "logs:PutLogEvents"
+            "logs:PutLogEvents",
+            "logs:CreateLogStream"
           ]
           Effect   = "Allow"
           Resource = "*"
-        },
+        }
+        # {
+        #   Action   = [
+        #     "logs:PutLogEvents",
+        #     "logs:CreateLogStream"
+        #   ]
+        #   Effect   = "Allow"
+        #   Resource: [
+        #     "arn:aws:logs:eu-central-1:648410456371:log-group:frontend-ecs-services-${terraform.workspace}-removeservice:log-stream:*",
+        #     "arn:aws:logs:eu-central-1:648410456371:log-group:frontend-ecs-services-${terraform.workspace}-removeservice"
+        #   ]
+        # },
       ]
     })
   }
@@ -35,7 +45,10 @@ resource "aws_iam_role" "removeservice_permission" {
             "dynamodb:DescribeStream"
           ]
           Effect   = "Allow"
-          Resource = "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502"
+          Resource = [
+            "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502",
+            "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client-pre/stream/2021-06-14T18:56:04.772"
+          ]
         },
         {
           Action   = [
@@ -93,6 +106,7 @@ resource "aws_iam_role" "removeservice_permission" {
           Resource = [
             "arn:aws:ecr:eu-central-1:648410456371:repository/lazzaro-front-repo",
             "arn:aws:ecr:eu-central-1:648410456371:repository/lazzaro-front-repo-pre",
+            "arn:aws:s3:::lazzaro-ongs-template-artifacts-${terraform.workspace}/*",
             "arn:aws:codebuild:eu-central-1:648410456371:project/frontend-code-build-service-${terraform.workspace}"
           ]
         },
@@ -113,6 +127,23 @@ resource "aws_iam_role" "removeservice_permission" {
             "arn:aws:ec2:eu-central-1:648410456371:vpc/*"
           ]
         },
+      ]
+    })
+  }
+  # ssm
+  inline_policy {
+    name = "ssm"
+
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action   = [
+            "ssm:GetParameter"
+          ]
+          Effect   = "Allow"
+          Resource = "arn:aws:ssm:eu-central-1:648410456371:parameter/*"
+        }
       ]
     })
   }

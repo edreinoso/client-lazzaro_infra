@@ -7,6 +7,12 @@ data "terraform_remote_state" "build_permissions" {
   }
 }
 
+resource "aws_s3_bucket" "repository" {
+  bucket        = "lazzaro-ongs-template-bucket-${terraform.workspace}"
+  acl           = "private"
+  force_destroy =  true
+}
+
 resource "aws_codebuild_project" "ecs_containers_build" {
   name         = "frontend-code-build-service-${terraform.workspace}"
   service_role = data.terraform_remote_state.build_permissions.outputs.codebuild_permission_arn
@@ -25,7 +31,7 @@ resource "aws_codebuild_project" "ecs_containers_build" {
 
   source {
     type     = "S3"
-    location = "lazzaro-ongs-template-bucket"
+    location = "${aws_s3_bucket.repository.bucket}/"
   }
 
   logs_config {
