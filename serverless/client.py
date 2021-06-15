@@ -25,12 +25,16 @@ def isValidString(string):
 
 def build_process(port_n, name, parsedTime):
     build = codebuild_client.start_build(
-        projectName='frontend-code-build-service',
-        # projectName='frontend-code-build-service-'+os.environ['environment'],
+        projectName='frontend-code-build-service-'+os.environ['environment'],
+        # projectName='frontend-code-build-service',
         environmentVariablesOverride=[
             {
                 'name': 'port',
                 'value': port_n,
+            },
+            {
+                'name': 'environment',
+                'value': os.environ['environment']
             },
             {
                 'name': 'ong_name',
@@ -139,7 +143,7 @@ def removeclient():
         else:
             try:
                 ddb_client.delete_item(
-                    TableName='frontend-ddb-client',
+                    TableName=os.environ['ddbTable'],
                     Key={
                         'Client': {
                             'S': name,

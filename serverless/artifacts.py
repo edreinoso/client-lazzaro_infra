@@ -19,7 +19,7 @@ ecs_client = boto3.client('ecs')
 sg_client = boto3.client('ec2')
 log_client = boto3.client('logs')
 r53_client = boto3.client('route53')
-table = dynamodb.Table('frontend-ddb-client')
+table = dynamodb.Table(os.environ['ddbTable'])
 
 # def handle_service_creation(client):
 def handle_service_creation(client, params):
@@ -36,6 +36,8 @@ def handle_service_creation(client, params):
     # assigning port and date vars
     port = query['Items'][0]['Port']
     date = query['Items'][0]['Date']
+
+    # print(query, port, date)
 
     # tags
     # is this allowed?
@@ -109,7 +111,6 @@ def handle_service_creation(client, params):
             SslPolicy='ELBSecurityPolicy-2016-08',
             Certificates=[
                 {
-                    # 'CertificateArn': os.environ['certificateArn'],
                     'CertificateArn': params['certificate_arn'],
                 },
             ],
@@ -135,6 +136,7 @@ def handle_service_creation(client, params):
     )
 
     logger.info("4. Creating Listener Rule")
+    print(rules['Rules'])
     print('rule number: ', int(rules['Rules']
           [len(rules['Rules'])-2]['Priority'])+1)
     # create listener rule
@@ -303,9 +305,7 @@ def handle_service_creation(client, params):
             networkConfiguration={
                 'awsvpcConfiguration': {
                     'subnets': [
-                        # os.environ['pub_subnet_a'],
                         params['client_subnet_2_a'],
-                        # os.environ['pub_subnet_b']
                         params['client_subnet_2_b'],
                         params['client_subnet_3_a'],
                         params['client_subnet_3_b']
@@ -345,19 +345,17 @@ def handle_service_creation(client, params):
         r53_client.change_resource_record_sets(
             HostedZoneId=os.environ['r53HostedZoneId'],
             ChangeBatch={
-                'Comment': 'testing dns auto creation record',
+                'Comment': 'DNS record creation for ' + os.environ['environment'] + ' environment',
                 'Changes': [
                     {
                         'Action': 'CREATE',
                         'ResourceRecordSet': {
-                            'Name': client+'.web.lazzaro.io',
+                            'Name': 'pre'+client+'.web.lazzaro.io',
                             'Type': 'A',
                             'AliasTarget': {
                                 # zone of the load balancer
-                                # 'HostedZoneId': os.environ['elbHostedZoneId'],
                                 'HostedZoneId': params['alb_zone'],
                                 # need dns of balancer
-                                # 'DNSName': os.environ['dnsName'],
                                 'DNSName': params['alb_dns'],
                                 'EvaluateTargetHealth': True
                             },
@@ -377,7 +375,7 @@ def handle_service_creation(client, params):
     logger.info("9. Updating Item in DDB table")
     # update item to include more attributes
     ddb_client.update_item(
-        TableName='frontend-ddb-client',
+        TableName=os.environ['ddbTable'],
         Key={
             'Client': {
                 'S': client,
@@ -409,7 +407,7 @@ def handler(event, context):
 
     ## getting the parameters
     params = new_params.handler(os.environ['environment'])
-
+    # print('environment: ', os.environ['environment'])
     print(params)
     
     # getting client from s3 event
@@ -422,5 +420,5 @@ def handler(event, context):
 
     return {
         'statusCode': 200,
-        'body': json.dumps('Function triggred by S3!')
+        'body': json.dumps('Function triggered by S3!')
     }

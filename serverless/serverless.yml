@@ -52,16 +52,42 @@ functions:
     role: arn:aws:iam::648410456371:role/front_test_delete_soon
     timeout: 45
     events:
-      - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502
+      # how to dynamically configure based on events
+      # - stream:
+      #   type: dynamodb
+      #   arn:
+      #     Fn::GetAtt: [ ClientTable, StreamArn ]
+      # - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client-${env:environment}/stream/*    
+      # - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502 # prod
   
   ## Test ssm parameter retrieval
   testservice:
     handler: testdeploy.handler
     role: arn:aws:iam::648410456371:role/front_test_delete_soon
     timeout: 30
+    events:
+      # - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client-pre/stream/2021-06-14T12:58:14.004
 
 # resources:
-#   - ${file(resources/codebuild-role.yml)}
-#   - ${file(resources/client-gateway-permission.yml)}
-#   - ${file(resources/create-permission.yml)}
-#   - ${file(resources/delete-permission.yml)}
+  # - ${file(resources/ddb_table.yml)}
+  # Resources:
+  #   ClientTable:
+  #     Type: "AWS::DynamoDB::Table"
+  #     Properties:
+  #       AttributeDefinitions:
+  #         - AttributeName: Client
+  #           AttributeType: S
+  #       KeySchema:
+  #         - AttributeName: Client
+  #           KeyType: HASH
+  #       ProvisionedThroughput:
+  #         ReadCapacityUnits: 5
+  #         WriteCapacityUnits: 5
+  #       TableName: frontend-ddb-client-${env:environment}
+  #       Tags:
+  #         - Key: "Name"
+  #           Value: frontend-ddb-client-${env:environment}
+  #         - Key: "Creation_Date"
+  #           Value: "14 June 2021"
+  #       StreamSpecification:
+  #         StreamViewType: NEW_AND_OLD_IMAGES

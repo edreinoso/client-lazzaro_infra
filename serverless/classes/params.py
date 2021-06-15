@@ -9,6 +9,8 @@ class get_params():
     def handler(self, env):
         self.env = env
         
+        print('line 12, get parmas: ', env)
+
         dict_of_params = {}
 
         ### network
