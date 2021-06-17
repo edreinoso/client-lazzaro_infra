@@ -23,7 +23,9 @@ table = dynamodb.Table(os.environ['ddbTable'])
 
 def handle_service_creation(client, params):
     image = params['image']+client
-    containerName = params['container']+client
+    container_name = params['container']+client
+    dns = os.environ['environment']+client+'.web.lazzaro.io'
+    log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
 
     # get stuff from dynamodb
     query = table.query(
@@ -60,7 +62,7 @@ def handle_service_creation(client, params):
     try:
         logger.info("1. Creating CloudWatch Logs")
         log_client.create_log_group(
-            logGroupName='/ecs/front/'+client,
+            logGroupName=log_group_name,
             tags={
                 'Name': client,
                 'Date': date
@@ -76,7 +78,7 @@ def handle_service_creation(client, params):
     logger.info("2. Creating Target Groups")
     # target groups
     targetg = elb_client.create_target_group(
-        Name=client,
+        Name=os.environ['environment']+'-'+client,
         Port=int(port),
         VpcId=params['vpc_id'],
         Protocol='HTTP',
@@ -143,7 +145,7 @@ def handle_service_creation(client, params):
                 {
                     'Field': 'host-header',
                     'Values': [
-                        client+'.web.lazzaro.io'
+                        dns
                     ]
                 },
             ],
@@ -173,7 +175,7 @@ def handle_service_creation(client, params):
                 {
                     'Field': 'host-header',
                     'Values': [
-                        client+'.web.lazzaro.io'
+                        os.environ['environment']+client+'.web.lazzaro.io'
                     ]
                 },
             ],
@@ -199,7 +201,7 @@ def handle_service_creation(client, params):
     # security group
     try:
         create_sg = sg_client.create_security_group(
-            GroupName=client+'_sg',
+            GroupName=os.environ['environment']+'_'+client+'_sg',
             Description='security group for client: '+client,
             VpcId=params['vpc_id'],
             # TagSpecifications=[
@@ -233,7 +235,7 @@ def handle_service_creation(client, params):
                     {
                         'Name': 'group-name',
                         'Values': [
-                            client+'_sg',
+                            os.environ['environment']+'_'+client+'_sg',
                         ]
                     },
                 ],
@@ -272,13 +274,13 @@ def handle_service_creation(client, params):
     logger.info("6. Creating Task Definition")
     # task definition
     task_definition = ecs_client.register_task_definition(
-        family='task_definition_'+client,
+        family='task_definition_'+os.environ['environment']+'_'+client,
         # executionRoleArn=os.environ['role'],
         executionRoleArn=params['role_arn'],
         networkMode='awsvpc',
         containerDefinitions=[
             {
-                'name': containerName,
+                'name': container_name,
                 'image': image,
                 'portMappings': [
                     {
@@ -290,7 +292,7 @@ def handle_service_creation(client, params):
                     'logDriver': 'awslogs',
                     'options': {
                         "awslogs-region": "eu-central-1",
-                        "awslogs-group": "/ecs/front/"+client,
+                        "awslogs-group": log_group_name,
                         "awslogs-stream-prefix": "ecs"
                     },
                 },
@@ -310,12 +312,12 @@ def handle_service_creation(client, params):
         ecs_client.create_service(
             # cluster=os.environ['cluster'],
             cluster=params['cluster_arn'],
-            serviceName='service_'+client,
-            taskDefinition='task_definition_'+client,
+            serviceName='service_'+os.environ['environment']+'_'+client,
+            taskDefinition='task_definition_'+os.environ['environment']+'_'+client,
             loadBalancers=[
                 {
                     'targetGroupArn': target_arn,  # arn of target group
-                    'containerName': containerName,
+                    'containerName': container_name,
                     'containerPort': int(port)
                 },
             ],
@@ -378,7 +380,7 @@ def handle_service_creation(client, params):
                     {
                         'Action': 'CREATE',
                         'ResourceRecordSet': {
-                            'Name': client+'.web.lazzaro.io',
+                            'Name': dns,
                             'Type': 'A',
                             'AliasTarget': {
                                 # zone of the load balancer

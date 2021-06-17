@@ -73,7 +73,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
         ecs_client.delete_service(
             # cluster=os.environ['cluster'],
             cluster=params['cluster_arn'],
-            service='service_'+client,
+            service='service_'+os.environ['environment']+'_'+client,
             force=True
         )
     except botocore.exceptions.ClientError as error:
@@ -153,7 +153,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
                     {
                         'Action': 'DELETE',
                         'ResourceRecordSet': {
-                            'Name': client+'.web.lazzaro.io',
+                            'Name': os.environ['environment']+client+'.web.lazzaro.io',
                             'Type': 'A',
                             'AliasTarget': {
                                 # zone of the load balancer
