@@ -24,8 +24,11 @@ table = dynamodb.Table(os.environ['ddbTable'])
 def handle_service_creation(client, params):
     image = params['image']+client
     container_name = params['container']+client
-    dns = os.environ['environment']+client+'.web.lazzaro.io'
-    log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
+    dns = client+'.web.lazzaro.io'
+    log_group_name = '/ecs/front/'+client
+    sg_name = client+'_sg'
+    task_definition_fam = 'task_definition_'+client
+    service_name = 'service_'+client
 
     # get stuff from dynamodb
     query = table.query(
@@ -78,7 +81,7 @@ def handle_service_creation(client, params):
     logger.info("2. Creating Target Groups")
     # target groups
     targetg = elb_client.create_target_group(
-        Name=os.environ['environment']+'-'+client,
+        Name=client,
         Port=int(port),
         VpcId=params['vpc_id'],
         Protocol='HTTP',
@@ -175,7 +178,7 @@ def handle_service_creation(client, params):
                 {
                     'Field': 'host-header',
                     'Values': [
-                        os.environ['environment']+client+'.web.lazzaro.io'
+                        dns
                     ]
                 },
             ],
@@ -201,7 +204,7 @@ def handle_service_creation(client, params):
     # security group
     try:
         create_sg = sg_client.create_security_group(
-            GroupName=os.environ['environment']+'_'+client+'_sg',
+            GroupName=sg_name,
             Description='security group for client: '+client,
             VpcId=params['vpc_id'],
             # TagSpecifications=[
@@ -235,7 +238,7 @@ def handle_service_creation(client, params):
                     {
                         'Name': 'group-name',
                         'Values': [
-                            os.environ['environment']+'_'+client+'_sg',
+                            sg_name,
                         ]
                     },
                 ],
@@ -274,7 +277,7 @@ def handle_service_creation(client, params):
     logger.info("6. Creating Task Definition")
     # task definition
     task_definition = ecs_client.register_task_definition(
-        family='task_definition_'+os.environ['environment']+'_'+client,
+        family=task_definition_fam,
         # executionRoleArn=os.environ['role'],
         executionRoleArn=params['role_arn'],
         networkMode='awsvpc',
@@ -312,8 +315,8 @@ def handle_service_creation(client, params):
         ecs_client.create_service(
             # cluster=os.environ['cluster'],
             cluster=params['cluster_arn'],
-            serviceName='service_'+os.environ['environment']+'_'+client,
-            taskDefinition='task_definition_'+os.environ['environment']+'_'+client,
+            serviceName=service_name,
+            taskDefinition=task_definition_fam,
             loadBalancers=[
                 {
                     'targetGroupArn': target_arn,  # arn of target group
