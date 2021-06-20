@@ -23,6 +23,12 @@ codebuild_client = boto3.client('codebuild')
 r53_client = boto3.client('route53')
 
 def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, security_group_id, params):
+    # Local vars
+    log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
+    service_name = 'service_'+os.environ['environment']+'_'+client
+    s3_key = 'frontend-code-build-service/'+client+'.json'
+    dns = os.environ['environment']+client+'.web.lazzaro.io'
+
     logger.info('Handling service deletion')
 
     # delete
@@ -30,7 +36,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     # logs
     try:
         log_client.delete_log_group(
-            logGroupName='/ecs/front/'+client,
+            logGroupName=log_group_name,
         )
     except botocore.exceptions.ClientError as error:
         if error.response['Error']['Code'] == 'ResourceNotFoundException':
@@ -39,6 +45,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
             raise error
 
     logger.info('2. Deleting Listener Rule')
+    
     # listener rule
     try:
         elb_client.delete_rule(
@@ -50,12 +57,10 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
         else:
             raise error
 
-    
-
     logger.info('3. Deleting Target Group')
+    
     # target groups
     try:
-        #
         elb_client.delete_target_group(
             TargetGroupArn=target_arn
         )
@@ -68,12 +73,12 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
             raise error
 
     logger.info('4. Deleting Service')
+    
     # service
     try:
         ecs_client.delete_service(
-            # cluster=os.environ['cluster'],
             cluster=params['cluster_arn'],
-            service='service_'+os.environ['environment']+'_'+client,
+            service=service_name,
             force=True
         )
     except botocore.exceptions.ClientError as error:
@@ -85,13 +90,13 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
             raise error
 
     logger.info('5. Deleting Task Definition')
+    
     # task definition
     # might have to get the revision of the service (?)
     try:
         ecs_client.deregister_task_definition(
             taskDefinition=taskd_arn
         )
-        #
     except botocore.exceptions.ClientError as error:
         if error.response['Error']['Code'] == 'InvalidParameterException':
             logger.warn('Task Definition can not be blank')
@@ -99,17 +104,19 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
             raise error
 
     logger.info('6. Object Deletion from Bucket')
+    
     # s3 object
     try:
         s3_client.delete_object(
             Bucket=os.environ['bucket'],
-            Key='frontend-code-build-service/'+client+'.json'
+            Key=s3_key
         )
         # logger.info(s3res)
     except botocore.exceptions.ClientError as error:
         raise error
 
     logger.info('7. Deleting image from ECR')
+    
     # ecr image
     try:
         ecr_client.batch_delete_image(
@@ -127,6 +134,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
         raise error
 
     logger.info('8. Deleting build')
+    
     # code build
     try:
         codebuild_client.batch_delete_builds(
@@ -143,6 +151,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
             raise error
 
     logger.info('9. Deleting Route 53 record')
+    
     # record set
     try:
         r53_client.change_resource_record_sets(
@@ -153,7 +162,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
                     {
                         'Action': 'DELETE',
                         'ResourceRecordSet': {
-                            'Name': os.environ['environment']+client+'.web.lazzaro.io',
+                            'Name': dns,
                             'Type': 'A',
                             'AliasTarget': {
                                 # zone of the load balancer
@@ -179,23 +188,23 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     # security group
     # this needs to be changed to invoke a eventbridge
     # should pass a cron of 5 minutes from now
-    try:
-        sg_client.delete_security_group(
-            GroupId=security_group_id
-        )
-        # MissingParameter
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'MissingParameter':
-            logger.warn(
-                'The request must contain the parameter groupName or groupId')
-        elif error.response['Error']['Code'] == 'InvalidGroup.NotFound':
-            logger.warn(
-                'The security group does not exist')
-        elif error.response['Error']['Code'] == 'DependencyViolation':
-            logger.warn(
-                'The security group has a dependent object')
-        else:
-            raise error
+    # try:
+    #     sg_client.delete_security_group(
+    #         GroupId=security_group_id
+    #     )
+    #     # MissingParameter
+    # except botocore.exceptions.ClientError as error:
+    #     if error.response['Error']['Code'] == 'MissingParameter':
+    #         logger.warn(
+    #             'The request must contain the parameter groupName or groupId')
+    #     elif error.response['Error']['Code'] == 'InvalidGroup.NotFound':
+    #         logger.warn(
+    #             'The security group does not exist')
+    #     elif error.response['Error']['Code'] == 'DependencyViolation':
+    #         logger.warn(
+    #             'The security group has a dependent object')
+    #     else:
+    #         raise error
 
 
 def handler(event, context):

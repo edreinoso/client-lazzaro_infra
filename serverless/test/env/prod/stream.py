@@ -24,10 +24,10 @@ r53_client = boto3.client('route53')
 
 def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, security_group_id, params):
     # Local vars
-    log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
-    service_name = 'service_'+os.environ['environment']+'_'+client
+    log_group_name = '/ecs/front/'+client
+    service_name = 'service_'+client
     s3_key = 'frontend-code-build-service/'+client+'.json'
-    dns = os.environ['environment']+client+'.web.lazzaro.io'
+    dns = client+'.web.lazzaro.io'
 
     logger.info('Handling service deletion')
 
@@ -77,6 +77,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     # service
     try:
         ecs_client.delete_service(
+            # cluster=os.environ['cluster'],
             cluster=params['cluster_arn'],
             service=service_name,
             force=True
@@ -109,7 +110,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     try:
         s3_client.delete_object(
             Bucket=os.environ['bucket'],
-            Key=s3_key
+            Key= s3_key
         )
         # logger.info(s3res)
     except botocore.exceptions.ClientError as error:
@@ -185,6 +186,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
             raise error
 
     logger.info('10. Deleting Security Group')
+    
     # security group
     # this needs to be changed to invoke a eventbridge
     # should pass a cron of 5 minutes from now

@@ -64,6 +64,7 @@ resource "aws_iam_role" "createservice_permission" {
             "elasticloadbalancing:CreateTargetGroup",
             "elasticloadbalancing:DescribeListeners",
             "elasticloadbalancing:DescribeRules",
+            "elasticloadbalancing:DescribeTargetGroups",
             "elasticloadbalancing:CreateRule",
           ]
           Effect   = "Allow"
@@ -116,7 +117,7 @@ resource "aws_iam_role" "createservice_permission" {
         },
         {
           Action   = [
-            "ec2:CreateSecurityGroup",
+            "ec2:DescribeSecurityGroups",
           ]
           Effect   = "Allow"
           Resource = "*"

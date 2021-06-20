@@ -24,12 +24,12 @@ table = dynamodb.Table(os.environ['ddbTable'])
 def handle_service_creation(client, params):
     image = params['image']+client
     container_name = params['container']+client
-    dns = os.environ['environment']+client+'.web.lazzaro.io'
-    log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
-    target_group_name = os.environ['environment']+'-'+client
-    sg_name = os.environ['environment']+'_'+client+'_sg'
-    task_definition_fam = 'task_definition_'+os.environ['environment']+'_'+client
-    service_name = 'service_'+os.environ['environment']+'_'+client
+    dns = client+'.web.lazzaro.io'
+    log_group_name = '/ecs/front/'+client
+    target_group_name = client
+    sg_name = client+'_sg'
+    task_definition_fam = 'task_definition_'+client
+    service_name = 'service_'+client
 
     # get stuff from dynamodb
     query = table.query(
@@ -81,30 +81,17 @@ def handle_service_creation(client, params):
 
     logger.info("2. Creating Target Groups")
     # target groups
-    try:
-        targetg = elb_client.create_target_group(
-            Name=target_group_name,
-            Port=int(port),
-            VpcId=params['vpc_id'],
-            Protocol='HTTP',
-            HealthCheckPath='/healthcheck',
-            HealthCheckPort=port,
-            TargetType='ip',
-            Tags=tags
-        )
-        target_arn = targetg['TargetGroups'][0]['TargetGroupArn']
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'DuplicateTargetGroupName':
-            logger.warn(
-                'A target group with the same name '+ client +' exists, but with different settings')
-            targetg = elb_client.describe_target_groups(
-                LoadBalancerArn=params['alb_arn'],
-                Names=[ client ]
-            )
-            target_arn = targetg['TargetGroups'][0]['TargetGroupArn']
-        else:
-            raise error
-    
+    targetg = elb_client.create_target_group(
+        Name=target_group_name,
+        Port=int(port),
+        VpcId=params['vpc_id'],
+        Protocol='HTTP',
+        HealthCheckPath='/healthcheck',
+        HealthCheckPort=port,
+        TargetType='ip',
+        Tags=tags
+    )
+    target_arn = targetg['TargetGroups'][0]['TargetGroupArn']
 
     # if no listener has been found in the load balancer
     # then create a listener
@@ -291,7 +278,7 @@ def handle_service_creation(client, params):
     logger.info("6. Creating Task Definition")
     # task definition
     task_definition = ecs_client.register_task_definition(
-        family='task_definition_'+os.environ['environment']+'_'+client,
+        family=task_definition_fam,
         # executionRoleArn=os.environ['role'],
         executionRoleArn=params['role_arn'],
         networkMode='awsvpc',
@@ -412,6 +399,7 @@ def handle_service_creation(client, params):
         )
     except botocore.exceptions.ClientError as error:
         if error.response['Error']['Code'] == 'InvalidChangeBatch':
+            # might have to check whether this is possible
             logger.warn('Record set already exists')
         else:
             raise error

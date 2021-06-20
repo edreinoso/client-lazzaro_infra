@@ -26,6 +26,10 @@ def handle_service_creation(client, params):
     container_name = params['container']+client
     dns = os.environ['environment']+client+'.web.lazzaro.io'
     log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
+    target_group_name = os.environ['environment']+'-'+client
+    sg_name = os.environ['environment']+'_'+client+'_sg'
+    task_definition_fam = 'task_definition_'+os.environ['environment']+'_'+client
+    service_name = 'service_'+os.environ['environment']+'_'+client
 
     # get stuff from dynamodb
     query = table.query(
@@ -63,7 +67,7 @@ def handle_service_creation(client, params):
         logger.info("1. Creating CloudWatch Logs")
         log_client.create_log_group(
             logGroupName=log_group_name,
-            tags={
+            tags= {
                 'Name': client,
                 'Date': date
             }
@@ -77,17 +81,30 @@ def handle_service_creation(client, params):
 
     logger.info("2. Creating Target Groups")
     # target groups
-    targetg = elb_client.create_target_group(
-        Name=os.environ['environment']+'-'+client,
-        Port=int(port),
-        VpcId=params['vpc_id'],
-        Protocol='HTTP',
-        HealthCheckPath='/healthcheck',
-        HealthCheckPort=port,
-        TargetType='ip',
-        Tags=tags
-    )
-    target_arn = targetg['TargetGroups'][0]['TargetGroupArn']
+    try:
+        targetg = elb_client.create_target_group(
+            Name=target_group_name,
+            Port=int(port),
+            VpcId=params['vpc_id'],
+            Protocol='HTTP',
+            HealthCheckPath='/healthcheck',
+            HealthCheckPort=port,
+            TargetType='ip',
+            Tags=tags
+        )
+        target_arn = targetg['TargetGroups'][0]['TargetGroupArn']
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'DuplicateTargetGroupName':
+            logger.warn(
+                'A target group with the same name '+ client +' exists, but with different settings')
+            targetg = elb_client.describe_target_groups(
+                LoadBalancerArn=params['alb_arn'],
+                Names=[ client ]
+            )
+            target_arn = targetg['TargetGroups'][0]['TargetGroupArn']
+        else:
+            raise error
+    
 
     # if no listener has been found in the load balancer
     # then create a listener
@@ -175,7 +192,7 @@ def handle_service_creation(client, params):
                 {
                     'Field': 'host-header',
                     'Values': [
-                        os.environ['environment']+client+'.web.lazzaro.io'
+                        dns
                     ]
                 },
             ],
@@ -201,7 +218,7 @@ def handle_service_creation(client, params):
     # security group
     try:
         create_sg = sg_client.create_security_group(
-            GroupName=os.environ['environment']+'_'+client+'_sg',
+            GroupName=sg_name,
             Description='security group for client: '+client,
             VpcId=params['vpc_id'],
             # TagSpecifications=[
@@ -235,7 +252,7 @@ def handle_service_creation(client, params):
                     {
                         'Name': 'group-name',
                         'Values': [
-                            os.environ['environment']+'_'+client+'_sg',
+                            sg_name,
                         ]
                     },
                 ],
@@ -312,8 +329,8 @@ def handle_service_creation(client, params):
         ecs_client.create_service(
             # cluster=os.environ['cluster'],
             cluster=params['cluster_arn'],
-            serviceName='service_'+os.environ['environment']+'_'+client,
-            taskDefinition='task_definition_'+os.environ['environment']+'_'+client,
+            serviceName=service_name,
+            taskDefinition=task_definition_fam,
             loadBalancers=[
                 {
                     'targetGroupArn': target_arn,  # arn of target group
@@ -364,7 +381,6 @@ def handle_service_creation(client, params):
         )
     except botocore.exceptions.ClientError as error:
         if error.response['Error']['Code'] == 'InvalidParameterException':
-            # might have to check whether this is possible
             logger.warn('Service already existing')
         else:
             raise error
@@ -396,7 +412,6 @@ def handle_service_creation(client, params):
         )
     except botocore.exceptions.ClientError as error:
         if error.response['Error']['Code'] == 'InvalidChangeBatch':
-            # might have to check whether this is possible
             logger.warn('Record set already exists')
         else:
             raise error
@@ -436,7 +451,6 @@ def handler(event, context):
 
     ## getting the parameters
     params = new_params.handler(os.environ['environment'])
-    # print('environment: ', os.environ['environment'])
     print(params)
     
     # getting client from s3 event

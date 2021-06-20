@@ -6,3 +6,6 @@ alias pre_ecs='cp ./test/pre_infra.txt ./infra.tf'
 
 alias prod_iam='cp ./test/prod_iam.txt ./permissions.tf'
 alias pre_iam='cp ./test/pre_iam.txt ./permissions.tf'
+
+alias pre_sls='cp ./test/env/pre/artifacts.py ./artifacts.py; cp ./test/env/pre/stream.py ./stream.py'
+alias prod_sls='cp ./test/env/prod/artifacts.py ./artifacts.py; cp ./test/env/prod/stream.py ./stream.py'

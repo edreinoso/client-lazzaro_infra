@@ -31,7 +31,7 @@ resource "aws_codebuild_project" "ecs_containers_build" {
 
   source {
     type     = "S3"
-    location = "${aws_s3_bucket.repository.bucket}/"
+    location = "lazzaro-ongs-template-bucket/"
   }
 
   logs_config {
