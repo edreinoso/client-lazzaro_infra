@@ -1,27 +1,23 @@
 import os
 import json
-import boto3
-import botocore
-from boto3.dynamodb.conditions import Key
 import logging
 import sys
 sys.path.append("./classes")
+from r53 import update_record
+from ddb import update_table, query_table
+from sg import security_group
+from elb import elb_service
+from ecs import ecs_service
 from params import get_params
+# params imported from SSM
+# external classes
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Global vars: boto3 init
-dynamodb = boto3.resource('dynamodb', region_name='eu-central-1')
-ddb_client = boto3.client('dynamodb')
-elb_client = boto3.client('elbv2')
-ecs_client = boto3.client('ecs')
-sg_client = boto3.client('ec2')
-log_client = boto3.client('logs')
-r53_client = boto3.client('route53')
-table = dynamodb.Table(os.environ['ddbTable'])
 
 def handle_service_creation(client, params):
+    # Local vars
     image = params['image']+client
     container_name = params['container']+client
     dns = os.environ['environment']+client+'.web.lazzaro.io'
@@ -31,10 +27,16 @@ def handle_service_creation(client, params):
     task_definition_fam = 'task_definition_'+os.environ['environment']+'_'+client
     service_name = 'service_'+os.environ['environment']+'_'+client
 
+    # Init classes
+    ecs = ecs_service()
+    elb = elb_service()
+    security = security_group()
+    r53 = update_record()
+    ddb_update = update_table()
+    ddb_query = query_table()
+
     # get stuff from dynamodb
-    query = table.query(
-        KeyConditionExpression=Key('Client').eq(client)
-    )
+    query = ddb_query.get_item(client)
 
     # assigning port and date vars
     port = query['Items'][0]['Port']
@@ -62,397 +64,85 @@ def handle_service_creation(client, params):
     ]
 
     # create
-    # logs
-    try:
-        logger.info("1. Creating CloudWatch Logs")
-        log_client.create_log_group(
-            logGroupName=log_group_name,
-            tags= {
-                'Name': client,
-                'Date': date
-            }
-        )
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'ResourceAlreadyExistsException':
-            logger.warn(
-                'Skipping this portion, cloudwatch logs already exist!')
-        else:
-            raise error
+    # cw logs
+    logger.info("1. Creating Logs")
+    ecs.create_logs(client, date, log_group_name)
 
     logger.info("2. Creating Target Groups")
-    # target groups
-    try:
-        targetg = elb_client.create_target_group(
-            Name=target_group_name,
-            Port=int(port),
-            VpcId=params['vpc_id'],
-            Protocol='HTTP',
-            HealthCheckPath='/healthcheck',
-            HealthCheckPort=port,
-            TargetType='ip',
-            Tags=tags
-        )
-        target_arn = targetg['TargetGroups'][0]['TargetGroupArn']
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'DuplicateTargetGroupName':
-            logger.warn(
-                'A target group with the same name '+ client +' exists, but with different settings')
-            targetg = elb_client.describe_target_groups(
-                LoadBalancerArn=params['alb_arn'],
-                Names=[ client ]
-            )
-            target_arn = targetg['TargetGroups'][0]['TargetGroupArn']
-        else:
-            raise error
-    
+    # elb target groups
+    target_arn = elb.create_target_groups(
+        client, port, target_group_name, params['vpc_id'], params['alb_arn'], tags)
 
-    # if no listener has been found in the load balancer
-    # then create a listener
-    # this might require a lot of computation?
+    #! IMPROVE: aggregate this into multiple functions inside of the class
+    #! response should be an object containing: listener and rule arns
     logger.info("3. Checking to see if there's a Listener")
-    # checking for listener
-    describe_listener_response = elb_client.describe_listeners(
-        LoadBalancerArn=params['alb_arn'],
-    )
+    # checking for elb listener
+    is_there_listener = elb.check_for_listener(params['alb_arn'])
 
     listener_arn = ''
-    if(len(describe_listener_response['Listeners']) < 1):
+    if(is_there_listener):  # if there are listeners, then grab the arn
+        listener_arn = elb.get_listener(params['alb_arn'])
+    else:  # if there are no listeners, then create one
         logger.info("3a. Creating Listener")
-        # listener
-        listener = elb_client.create_listener(
-            # LoadBalancerArn=os.environ['lb_arn'],
-            LoadBalancerArn=params['alb_arn'],
-            Protocol='HTTPS',
-            Port=443,
-            SslPolicy='ELBSecurityPolicy-2016-08',
-            Certificates=[
-                {
-                    'CertificateArn': params['certificate_arn'],
-                },
-            ],
-            DefaultActions=[
-                {
-                    'Type': 'forward',
-                    'TargetGroupArn': target_arn,
-                },
-            ],
-            Tags=tags
-        )
-        listener_arn = listener['Listeners'][0]['ListenerArn']
-    else:
-        # assigning arn of the listener
-        listener_arn = describe_listener_response['Listeners'][0]['ListenerArn']
+        listener_arn = elb.create_listener(
+            params['alb_arn'], params['certificate_arn'], target_arn, tags)
 
     # need to get the number of listeners
     # just add one more on top of the latest that
     # the highest priority
-    rules = elb_client.describe_rules(
-        # this is gonna have to be dynamic
-        ListenerArn=listener_arn,
-    )
+    number_of_rules = elb.check_for_rules(listener_arn)
 
+    print(number_of_rules)
     logger.info("4. Creating Listener Rule")
-    rule_arn=''
-    if(len(rules['Rules']) < 2):
-        #priority should be 1
-        print('priority should be 1')
-        listener_rule = elb_client.create_rule(
-            ListenerArn=listener_arn,
-            Conditions=[
-                {
-                    'Field': 'host-header',
-                    'Values': [
-                        dns
-                    ]
-                },
-            ],
-            Priority=1,
-            Actions=[
-                {
-                    'Type': 'forward',
-                    'TargetGroupArn': target_arn,
-                    'ForwardConfig': {
-                        'TargetGroups': [
-                            {
-                                'TargetGroupArn': target_arn,
-                            },
-                        ]
-                    }
-                },
-            ],
-        )
-        rule_arn = listener_rule['Rules'][0]['RuleArn']
+    # elb rule
+    rule_arn = ''
+    if(number_of_rules['condition']):
+        rule_arn = elb.create_rule(
+            listener_arn, target_arn, dns, number_of_rules)
     else:
-        #priority should be len+1
-        print('rule number: ', int(
-            rules['Rules'][len(rules['Rules'])-2]['Priority'])+1)
-        listener_rule = elb_client.create_rule(
-            ListenerArn=listener_arn,
-            Conditions=[
-                {
-                    'Field': 'host-header',
-                    'Values': [
-                        dns
-                    ]
-                },
-            ],
-            Priority=int(rules['Rules'][len(rules['Rules'])-2]['Priority'])+1,
-            Actions=[
-                {
-                    'Type': 'forward',
-                    'TargetGroupArn': target_arn,
-                    'ForwardConfig': {
-                        'TargetGroups': [
-                            {
-                                'TargetGroupArn': target_arn,
-                            },
-                        ]
-                    }
-                },
-            ],
-        )
-        rule_arn = listener_rule['Rules'][0]['RuleArn']
+        rule_arn = elb.create_rule(
+            listener_arn, target_arn, dns, number_of_rules)
 
     logger.info("5. Creating Security Group")
-    sg_id = ''
     # security group
-    try:
-        create_sg = sg_client.create_security_group(
-            GroupName=sg_name,
-            Description='security group for client: '+client,
-            VpcId=params['vpc_id'],
-            # TagSpecifications=[
-            #     {
-            #         'ResourceType': 'security-group',
-            #         'Tags': tags
-            #     },
-            # ]
-        )
-        sg_id = create_sg['GroupId']
-        sg_client.authorize_security_group_ingress(
-            GroupId=sg_id,
-            IpPermissions=[
-                {
-                    'IpProtocol': 'tcp',
-                    'FromPort': int(port),
-                    'ToPort': int(port),
-                    'UserIdGroupPairs': [
-                        {
-                            'Description': 'allowing traffic from elb',
-                            'GroupId': params['alb_sg'],
-                        },
-                    ]
-                },
-            ]
-        )
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'InvalidGroup.Duplicate':
-            response = sg_client.describe_security_groups(
-                Filters=[
-                    {
-                        'Name': 'group-name',
-                        'Values': [
-                            sg_name,
-                        ]
-                    },
-                ],
-            )
-            print(response)
-            sg_id = response['SecurityGroups'][0]['GroupId']
-            try:
-                sg_client.authorize_security_group_ingress(
-                    GroupId=sg_id,
-                    IpPermissions=[
-                        {
-                            'IpProtocol': 'tcp',
-                            'FromPort': int(port),
-                            'ToPort': int(port),
-                            'UserIdGroupPairs': [
-                                {
-                                    'Description': 'allowing traffic from elb',
-                                    # 'GroupId': os.environ['elb_sg'],
-                                    'GroupId': params['alb_sg'],
-                                },
-                            ]
-                        },
-                    ]
-                )
-            except botocore.exceptions.ClientError as error:
-                if error.response['Error']['Code'] == 'InvalidPermission.Duplicate':
-                    logger.warn('Security group rule already exist!')
-                else:
-                    raise error
-            logger.warn('Skipping this portion, security group already exist!')
-        else:
-            raise error
-
+    sg_id = security.create_security_group(
+        client, port, params['alb_sg'], params['vpc_id'], sg_name)
     print(sg_id)
 
     logger.info("6. Creating Task Definition")
     # task definition
-    task_definition = ecs_client.register_task_definition(
-        family='task_definition_'+os.environ['environment']+'_'+client,
-        # executionRoleArn=os.environ['role'],
-        executionRoleArn=params['role_arn'],
-        networkMode='awsvpc',
-        containerDefinitions=[
-            {
-                'name': container_name,
-                'image': image,
-                'portMappings': [
-                    {
-                        # dynamic from dynamodb
-                        'containerPort': int(port),
-                    },
-                ],
-                'logConfiguration': {
-                    'logDriver': 'awslogs',
-                    'options': {
-                        "awslogs-region": "eu-central-1",
-                        "awslogs-group": log_group_name,
-                        "awslogs-stream-prefix": "ecs"
-                    },
-                },
-            },
-        ],
-        requiresCompatibilities=[
-            'FARGATE'
-        ],
-        cpu='512',
-        memory='1024',
-    )
-    taskd_arn = task_definition['taskDefinition']['taskDefinitionArn']
+    taskd_arn = ecs.register_task(
+        client, port, log_group_name, task_definition_fam, container_name, image, params['role_arn'])
 
     logger.info("7. Creating Service")
     # service
-    try:
-        ecs_client.create_service(
-            # cluster=os.environ['cluster'],
-            cluster=params['cluster_arn'],
-            serviceName=service_name,
-            taskDefinition=task_definition_fam,
-            loadBalancers=[
-                {
-                    'targetGroupArn': target_arn,  # arn of target group
-                    'containerName': container_name,
-                    'containerPort': int(port)
-                },
-            ],
-            desiredCount=1,
-            capacityProviderStrategy=[
-                {
-                    'capacityProvider': 'FARGATE',
-                    'weight': 100
-                }
-            ],
-            networkConfiguration={
-                'awsvpcConfiguration': {
-                    'subnets': [
-                        params['client_subnet_2_a'],
-                        params['client_subnet_2_b'],
-                        params['client_subnet_3_a'],
-                        params['client_subnet_3_b']
-                    ],
-                    'securityGroups': [
-                        sg_id,
-                    ],
-                    'assignPublicIp': 'ENABLED'
-                }
-            },
-            tags=[
-                {
-                    'key': 'Name',
-                    'value': client
-                },
-                {
-                    'key': 'Port',
-                    'value': port
-                },
-                {
-                    'key': 'Date',
-                    'value': date
-                },
-                {
-                    'key': 'Environment',
-                    'value': os.environ['environment']
-                },
-            ],
-            propagateTags='SERVICE',
-        )
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'InvalidParameterException':
-            logger.warn('Service already existing')
-        else:
-            raise error
+    #! IMPROVE: leverage dictionaries to shorten these parameters
+    # network = {}
+    # network['subnet_2_a'] = params['client_subnet_2_a']
+    # network['subnet_2_b'] = params['client_subnet_2_a']
+    # network['subnet_3_a'] = params['client_subnet_2_a']
+    # network['subnet_3_b'] = params['client_subnet_2_a']
+
+    ecs.create_service(client, port, date, service_name, target_arn, task_definition_fam, container_name,
+                               params['cluster_arn'], sg_id, params['client_subnet_2_a'], params['client_subnet_2_b'], params['client_subnet_3_a'], params['client_subnet_3_b'])
 
     logger.info("8. Route53 Record Set")
     # record set
-    try:
-        r53_client.change_resource_record_sets(
-            HostedZoneId=os.environ['r53HostedZoneId'],
-            ChangeBatch={
-                'Comment': 'DNS record creation for ' + os.environ['environment'] + ' environment',
-                'Changes': [
-                    {
-                        'Action': 'CREATE',
-                        'ResourceRecordSet': {
-                            'Name': dns,
-                            'Type': 'A',
-                            'AliasTarget': {
-                                # zone of the load balancer
-                                'HostedZoneId': params['alb_zone'],
-                                # need dns of balancer
-                                'DNSName': params['alb_dns'],
-                                'EvaluateTargetHealth': True
-                            },
-                        }
-                    },
-                ]
-            }
-        )
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'InvalidChangeBatch':
-            logger.warn('Record set already exists')
-        else:
-            raise error
+    r53.change_record(dns, params['alb_zone'], params['alb_dns'])
 
     logger.info("9. Updating Item in DDB table")
     # update item to include more attributes
-    ddb_client.update_item(
-        TableName=os.environ['ddbTable'],
-        Key={
-            'Client': {
-                'S': client,
-            }
-        },
-        # UpdateExpression="SET ListenerArn = :LArn, TargetArn = :TArn, SecurityGroupId = :SGId",
-        UpdateExpression="SET ListenerArn = :LArn, RuleArn = :RArn, TargetArn = :TArn, TaskDefinitionArn = :TDArn, SecurityGroupId = :SGId",
-        ExpressionAttributeValues={
-            ':LArn': {
-                'S': listener_arn
-            },
-            ':RArn': {
-                'S': rule_arn
-            },
-            ':TArn': {
-                'S': target_arn
-            },
-            ':TDArn': {
-                'S': taskd_arn
-            },
-            ':SGId': {
-                'S': sg_id
-            }
-        }
-    )
+    ddb_update.update_item(client, listener_arn, rule_arn,
+                           target_arn, taskd_arn, sg_id)
+
 
 def handler(event, context):
     new_params = get_params()
 
-    ## getting the parameters
+    # getting the parameters
     params = new_params.handler(os.environ['environment'])
     print(params)
-    
+
     # getting client from s3 event
     key = event['Records'][0]['s3']['object']['key']
     obj = key.split('/')[1]

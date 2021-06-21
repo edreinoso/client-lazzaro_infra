@@ -6,7 +6,14 @@ from boto3.dynamodb.conditions import Key
 import logging
 import sys
 sys.path.append("./classes")
+# params imported from SSM
 from params import get_params
+# external classes
+from ecs import logs, task_definition, service
+from ddb import query, update
+from elb import target_group, listener, rules
+from sg import security_group
+from r53 import update_record
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
