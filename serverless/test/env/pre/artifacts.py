@@ -3,14 +3,14 @@ import json
 import logging
 import sys
 sys.path.append("./classes")
+# params imported from SSM
+# external classes
+from params import get_params
 from r53 import update_record
 from ddb import update_table, query_table
 from sg import security_group
 from elb import elb_service
 from ecs import ecs_service
-from params import get_params
-# params imported from SSM
-# external classes
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -18,8 +18,8 @@ logger.setLevel(logging.INFO)
 
 def handle_service_creation(client, params):
     # Local vars
-    image = params['image']+client
-    container_name = params['container']+client
+    image = params['ecs']['image']+client
+    container_name = params['ecs']['container']+client
     dns = os.environ['environment']+client+'.web.lazzaro.io'
     log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
     target_group_name = os.environ['environment']+'-'+client
@@ -71,68 +71,34 @@ def handle_service_creation(client, params):
     logger.info("2. Creating Target Groups")
     # elb target groups
     target_arn = elb.create_target_groups(
-        client, port, target_group_name, params['vpc_id'], params['alb_arn'], tags)
+        client, port, target_group_name, params['network']['vpc_id'], params['elb']['alb_arn'], tags)
 
-    #! IMPROVE: aggregate this into multiple functions inside of the class
-    #! response should be an object containing: listener and rule arns
-    logger.info("3. Checking to see if there's a Listener")
-    # checking for elb listener
-    is_there_listener = elb.check_for_listener(params['alb_arn'])
-
-    listener_arn = ''
-    if(is_there_listener):  # if there are listeners, then grab the arn
-        listener_arn = elb.get_listener(params['alb_arn'])
-    else:  # if there are no listeners, then create one
-        logger.info("3a. Creating Listener")
-        listener_arn = elb.create_listener(
-            params['alb_arn'], params['certificate_arn'], target_arn, tags)
-
-    # need to get the number of listeners
-    # just add one more on top of the latest that
-    # the highest priority
-    number_of_rules = elb.check_for_rules(listener_arn)
-
-    print(number_of_rules)
-    logger.info("4. Creating Listener Rule")
-    # elb rule
-    rule_arn = ''
-    if(number_of_rules['condition']):
-        rule_arn = elb.create_rule(
-            listener_arn, target_arn, dns, number_of_rules)
-    else:
-        rule_arn = elb.create_rule(
-            listener_arn, target_arn, dns, number_of_rules)
+    logger.info("3. Creating Listerner/Rules")
+    # elb listener and rule
+    alb_listener = elb.create_listener_rule(params['elb']['alb_arn'], params['elb']['certificate_arn'], target_arn, tags, dns)
 
     logger.info("5. Creating Security Group")
     # security group
     sg_id = security.create_security_group(
-        client, port, params['alb_sg'], params['vpc_id'], sg_name)
+        client, port, params['elb']['alb_sg'], params['network']['vpc_id'], sg_name)
     print(sg_id)
 
     logger.info("6. Creating Task Definition")
     # task definition
     taskd_arn = ecs.register_task(
-        client, port, log_group_name, task_definition_fam, container_name, image, params['role_arn'])
+        client, port, log_group_name, task_definition_fam, container_name, image, params['ecs']['role_arn'])
 
     logger.info("7. Creating Service")
     # service
-    #! IMPROVE: leverage dictionaries to shorten these parameters
-    # network = {}
-    # network['subnet_2_a'] = params['client_subnet_2_a']
-    # network['subnet_2_b'] = params['client_subnet_2_a']
-    # network['subnet_3_a'] = params['client_subnet_2_a']
-    # network['subnet_3_b'] = params['client_subnet_2_a']
-
-    ecs.create_service(client, port, date, service_name, target_arn, task_definition_fam, container_name,
-                               params['cluster_arn'], sg_id, params['client_subnet_2_a'], params['client_subnet_2_b'], params['client_subnet_3_a'], params['client_subnet_3_b'])
+    ecs.create_service(client, port, date, service_name, target_arn, task_definition_fam, container_name, params['ecs']['cluster_arn'], sg_id, params['network'])
 
     logger.info("8. Route53 Record Set")
     # record set
-    r53.change_record(dns, params['alb_zone'], params['alb_dns'])
+    r53.change_record('CREATE', dns, params['elb']['alb_zone'], params['elb']['alb_dns'])
 
     logger.info("9. Updating Item in DDB table")
     # update item to include more attributes
-    ddb_update.update_item(client, listener_arn, rule_arn,
+    ddb_update.update_item(client, alb_listener['listener_arn'], alb_listener['rule_arn'],
                            target_arn, taskd_arn, sg_id)
 
 

@@ -10,3 +10,6 @@ output "create_permission_arn" {
 output "remove_permission_arn" {
     value = aws_iam_role.removeservice_permission.arn
 }
+output "test_permission_arn" {
+    value = aws_iam_role.testservice_permission.arn
+}

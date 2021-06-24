@@ -158,3 +158,43 @@ class elb_service():
 
         rule_arn = listener_rule['Rules'][0]['RuleArn']
         return rule_arn
+
+    def create_listener_rule(self, alb_arn, certificate, target_arn, tags, dns):
+        self.alb_arn = alb_arn
+        self.certificate = certificate
+        self.target_arn = target_arn
+        self.tags = tags
+        self.dns = dns
+
+        logger.info("3. Checking to see if there's a Listener")
+        is_there_listener = self.check_for_listener(alb_arn)
+
+        listener_arn = ''
+        if(is_there_listener):  # if there are listeners, then grab the arn
+            listener_arn = self.get_listener(alb_arn)
+        else:  # if there are no listeners, then create one
+            logger.info("3a. Creating Listener")
+            listener_arn = self.create_listener(
+                alb_arn, certificate, target_arn, tags)
+
+        # need to get the number of listeners
+        # just add one more on top of the latest that
+        # the highest priority
+        number_of_rules = self.check_for_rules(listener_arn)
+
+        print(number_of_rules)
+        logger.info("4. Creating Listener Rule")
+        # elb rule
+        rule_arn = ''
+        if(number_of_rules['condition']):
+            rule_arn = self.create_rule(
+                listener_arn, target_arn, dns, number_of_rules)
+        else:
+            rule_arn = self.create_rule(
+                listener_arn, target_arn, dns, number_of_rules)
+
+        alb_listener = {}
+        alb_listener['listener_arn'] = listener_arn
+        alb_listener['rule_arn'] = rule_arn
+
+        return alb_listener

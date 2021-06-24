@@ -10,7 +10,8 @@ logger = logging.getLogger()
 r53_client = boto3.client('route53')
 
 class update_record():
-    def change_record(self, dns, alb_zone, alb_dns):
+    def change_record(self, action, dns, alb_zone, alb_dns):
+        self.action = action
         self.dns = dns
         self.alb_zone = alb_zone
         self.alb_dns = alb_dns
@@ -22,7 +23,7 @@ class update_record():
                     'Comment': 'DNS record creation for ' + os.environ['environment'] + ' environment',
                     'Changes': [
                         {
-                            'Action': 'CREATE',
+                            'Action': action,
                             'ResourceRecordSet': {
                                 'Name': dns,
                                 'Type': 'A',

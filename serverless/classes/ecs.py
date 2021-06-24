@@ -76,7 +76,7 @@ class ecs_service():
         taskd_arn = task_definition['taskDefinition']['taskDefinitionArn']
         return taskd_arn
 
-    def create_service(self, client, port, date, service_name, target_arn, task_definition_fam, container_name, cluster_arn, sg_id, subnet_2_a, subnet_2_b, subnet_3_a, subnet_3_b):
+    def create_service(self, client, port, date, service_name, target_arn, task_definition_fam, container_name, cluster_arn, sg_id, subnets):
         self.client = client
         self.port = port
         self.service_name = service_name
@@ -85,10 +85,7 @@ class ecs_service():
         self.container_name = container_name
         self.cluster_arn = cluster_arn
         self.sg_id = sg_id
-        self.subnet_2_a = subnet_2_a
-        self.subnet_2_b = subnet_2_b
-        self.subnet_3_a = subnet_3_a
-        self.subnet_3_b = subnet_3_b
+        self.subnets = subnets
          
         try:
             ecs_client.create_service(
@@ -113,10 +110,10 @@ class ecs_service():
                 networkConfiguration={
                     'awsvpcConfiguration': {
                         'subnets': [
-                            subnet_2_a,
-                            subnet_2_b,
-                            subnet_3_a,
-                            subnet_3_b
+                            subnets['subnet_2_a'],
+                            subnets['subnet_2_b'],
+                            subnets['subnet_3_a'],
+                            subnets['subnet_3_b'],
                         ],
                         'securityGroups': [
                             sg_id,
