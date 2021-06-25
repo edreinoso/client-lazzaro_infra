@@ -7,15 +7,16 @@ import logging
 import sys
 sys.path.append("./classes")
 from params import get_params
-from ecs import ecs_service
-from elb import elb_service
-from sg import security_group
-from ddb import update_table, query_table
-from r53 import update_record
 from adhoc import adhoc_delete
+from r53 import update_record
+from ddb import update_table, query_table
+from sg import security_group
+from elb import elb_service
+from ecs import ecs_service
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
 
 def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, security_group_id, params):
     # Init classes
@@ -25,10 +26,10 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     adhoc = adhoc_delete()
 
     # Local vars
-    log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
-    service_name = 'service_'+os.environ['environment']+'_'+client
+    log_group_name = '/ecs/front/'+client
+    service_name = 'service_'+client
     s3_key = 'frontend-code-build-service/'+client+'.json'
-    dns = os.environ['environment']+client+'.web.lazzaro.io'
+    dns = client+'.web.lazzaro.io'
 
     logger.info('Handling service deletion')
 
@@ -59,7 +60,8 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
 
     logger.info('7. Deleting image from ECR')
     # ecr image
-    adhoc.delete_image(os.environ['account_id'], params['ecs']['repo_name'], client)
+    adhoc.delete_image(os.environ['account_id'],
+                       params['ecs']['repo_name'], client)
 
     logger.info('8. Deleting build')
     # code build
@@ -67,7 +69,8 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
 
     logger.info('9. Deleting Route 53 record')
     # record set
-    r53.change_record('DELETE', dns, params['elb']['alb_zone'], params['elb']['alb_dns'])
+    r53.change_record(
+        'DELETE', dns, params['elb']['alb_zone'], params['elb']['alb_dns'])
 
     # logger.info('10. Deleting Security Group')
     # security group
@@ -100,7 +103,7 @@ def handler(event, context):
     params = new_params.handler(os.environ['environment'])
 
     print(params)
-    
+
     if(event['Records'][0]['eventName'] == "REMOVE"):
         logger.info(event['Records'][0])  # need to judge whether there is
         # declaration of variables
@@ -119,7 +122,8 @@ def handler(event, context):
         # handling_service_deletion(client, buildid) # this is an empty build
     else:
         logger.info("Stream was not REMOVE")
-        logger.info("Stream was,: %s instead of REMOVED", event['Records'][0]['eventName'])
+        logger.info("Stream was,: %s instead of REMOVED",
+                    event['Records'][0]['eventName'])
 
     return {
         'statusCode': 200,

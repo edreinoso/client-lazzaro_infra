@@ -7,22 +7,24 @@ import logging
 import sys
 sys.path.append("./classes")
 from params import get_params
-
+from adhoc import adhoc_delete
+from r53 import update_record
+from ddb import update_table, query_table
+from sg import security_group
+from elb import elb_service
+from ecs import ecs_service
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Global vars: boto3 init
-log_client = boto3.client('logs')
-elb_client = boto3.client('elbv2')
-ecs_client = boto3.client('ecs')
-sg_client = boto3.client('ec2')
-s3_client = boto3.client('s3')
-ecr_client = boto3.client('ecr')
-codebuild_client = boto3.client('codebuild')
-r53_client = boto3.client('route53')
 
 def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, security_group_id, params):
+    # Init classes
+    ecs = ecs_service()
+    elb = elb_service()
+    r53 = update_record()
+    adhoc = adhoc_delete()
+
     # Local vars
     log_group_name = '/ecs/front/'+client
     service_name = 'service_'+client
@@ -34,159 +36,43 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     # delete
     logger.info('1. Deleting Log Group')
     # logs
-    try:
-        log_client.delete_log_group(
-            logGroupName=log_group_name,
-        )
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'ResourceNotFoundException':
-            logger.warn('Resource has been already deleted')
-        else:
-            raise error
+    ecs.delete_logs(log_group_name)
 
     logger.info('2. Deleting Listener Rule')
-    
     # listener rule
-    try:
-        elb_client.delete_rule(
-            RuleArn=rule_arn
-        )
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'ValidationError':
-            logger.warn('A listener rule ARN must be specified')
-        else:
-            raise error
+    elb.delete_listener_rule(rule_arn)
 
     logger.info('3. Deleting Target Group')
-    
     # target groups
-    try:
-        elb_client.delete_target_group(
-            TargetGroupArn=target_arn
-        )
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'ValidationError':
-            logger.warn('A target group ARN must be specified')
-        elif error.response['Error']['Code'] == 'ResourceInUse':
-            logger.warn('Target group is currently in used by a listener')
-        else:
-            raise error
+    elb.delete_target_group(target_arn)
 
     logger.info('4. Deleting Service')
-    
     # service
-    try:
-        ecs_client.delete_service(
-            # cluster=os.environ['cluster'],
-            cluster=params['cluster_arn'],
-            service=service_name,
-            force=True
-        )
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'ServiceNotFoundException':
-            logger.warn('Service not found')
-        elif error.response['Error']['Code'] == 'InvalidParameterException':
-            logger.warn('Service must match ^[a-zA-Z0-9\-_]{1,255}$')
-        else:
-            raise error
+    ecs.delete_service(service_name, params['ecs']['cluster_arn'])
 
     logger.info('5. Deleting Task Definition')
-    
     # task definition
-    # might have to get the revision of the service (?)
-    try:
-        ecs_client.deregister_task_definition(
-            taskDefinition=taskd_arn
-        )
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'InvalidParameterException':
-            logger.warn('Task Definition can not be blank')
-        else:
-            raise error
+    ecs.deregister_task(taskd_arn)
 
     logger.info('6. Object Deletion from Bucket')
-    
     # s3 object
-    try:
-        s3_client.delete_object(
-            Bucket=os.environ['bucket'],
-            Key= s3_key
-        )
-        # logger.info(s3res)
-    except botocore.exceptions.ClientError as error:
-        raise error
+    adhoc.delete_s3_object(os.environ['bucket'], s3_key)
 
     logger.info('7. Deleting image from ECR')
-    
     # ecr image
-    try:
-        ecr_client.batch_delete_image(
-            registryId=os.environ['account_id'],
-            # repositoryName=os.environ['repositoryName'],
-            repositoryName=params['repo_name'],
-            imageIds=[
-                {
-                    'imageTag': client
-                },
-            ]
-        )
-        # logger.info(ecr_res)
-    except botocore.exceptions.ClientError as error:
-        raise error
+    adhoc.delete_image(os.environ['account_id'],
+                       params['ecs']['repo_name'], client)
 
     logger.info('8. Deleting build')
-    
     # code build
-    try:
-        codebuild_client.batch_delete_builds(
-            ids=[
-                buildid,
-            ]
-        )
-        # logger.info(cb_res)
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'InvalidInputException':
-            # InvalidInputException
-            logger.warn('Invalid input operation')
-        else:
-            raise error
+    adhoc.delete_build(buildid)
 
     logger.info('9. Deleting Route 53 record')
-    
     # record set
-    try:
-        r53_client.change_resource_record_sets(
-            HostedZoneId=os.environ['r53HostedZoneId'],
-            ChangeBatch={
-                'Comment': 'testing dns auto creation record',
-                'Changes': [
-                    {
-                        'Action': 'DELETE',
-                        'ResourceRecordSet': {
-                            'Name': dns,
-                            'Type': 'A',
-                            'AliasTarget': {
-                                # zone of the load balancer
-                                # 'HostedZoneId': os.environ['elbHostedZoneId'],
-                                'HostedZoneId': params['alb_zone'],
-                                # need dns of balancer
-                                # 'DNSName': os.environ['dnsName'],
-                                'DNSName': params['alb_dns'],
-                                'EvaluateTargetHealth': True
-                            },
-                        }
-                    },
-                ]
-            }
-        )
-    except botocore.exceptions.ClientError as error:
-        if error.response['Error']['Code'] == 'InvalidChangeBatch':
-            logger.warn('Record was not found')
-        else:
-            raise error
+    r53.change_record(
+        'DELETE', dns, params['elb']['alb_zone'], params['elb']['alb_dns'])
 
-    logger.info('10. Deleting Security Group')
-    
+    # logger.info('10. Deleting Security Group')
     # security group
     # this needs to be changed to invoke a eventbridge
     # should pass a cron of 5 minutes from now
@@ -210,14 +96,14 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
 
 
 def handler(event, context):
-    # boto3 init
+    # params init
     new_params = get_params()
 
     ## getting the parameters
     params = new_params.handler(os.environ['environment'])
 
     print(params)
-    
+
     if(event['Records'][0]['eventName'] == "REMOVE"):
         logger.info(event['Records'][0])  # need to judge whether there is
         # declaration of variables
@@ -236,7 +122,8 @@ def handler(event, context):
         # handling_service_deletion(client, buildid) # this is an empty build
     else:
         logger.info("Stream was not REMOVE")
-        logger.info("Stream was,: %s instead of REMOVED", event['Records'][0]['eventName'])
+        logger.info("Stream was,: %s instead of REMOVED",
+                    event['Records'][0]['eventName'])
 
     return {
         'statusCode': 200,

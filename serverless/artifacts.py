@@ -6,11 +6,11 @@ sys.path.append("./classes")
 # params imported from SSM
 # external classes
 from params import get_params
-from r53 import update_record
-from ddb import update_table, query_table
-from sg import security_group
-from elb import elb_service
 from ecs import ecs_service
+from elb import elb_service
+from sg import security_group
+from ddb import update_table, query_table
+from r53 import update_record
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -20,12 +20,12 @@ def handle_service_creation(client, params):
     # Local vars
     image = params['ecs']['image']+client
     container_name = params['ecs']['container']+client
-    dns = os.environ['environment']+client+'.web.lazzaro.io'
-    log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
-    target_group_name = os.environ['environment']+'-'+client
-    sg_name = os.environ['environment']+'_'+client+'_sg'
-    task_definition_fam = 'task_definition_'+os.environ['environment']+'_'+client
-    service_name = 'service_'+os.environ['environment']+'_'+client
+    dns = client+'.web.lazzaro.io'
+    log_group_name = '/ecs/front/'+client
+    target_group_name = client
+    sg_name = client+'_sg'
+    task_definition_fam = 'task_definition_'+client
+    service_name = 'service_'+client
 
     # Init classes
     ecs = ecs_service()
@@ -75,7 +75,8 @@ def handle_service_creation(client, params):
 
     logger.info("3. Creating Listerner/Rules")
     # elb listener and rule
-    alb_listener = elb.create_listener_rule(params['elb']['alb_arn'], params['elb']['certificate_arn'], target_arn, tags, dns)
+    alb_listener = elb.create_listener_rule(
+        params['elb']['alb_arn'], params['elb']['certificate_arn'], target_arn, tags, dns)
 
     logger.info("5. Creating Security Group")
     # security group
@@ -90,11 +91,13 @@ def handle_service_creation(client, params):
 
     logger.info("7. Creating Service")
     # service
-    ecs.create_service(client, port, date, service_name, target_arn, task_definition_fam, container_name, params['ecs']['cluster_arn'], sg_id, params['network'])
+    ecs.create_service(client, port, date, service_name, target_arn, task_definition_fam,
+                       container_name, params['ecs']['cluster_arn'], sg_id, params['network'])
 
     logger.info("8. Route53 Record Set")
     # record set
-    r53.change_record('CREATE', dns, params['elb']['alb_zone'], params['elb']['alb_dns'])
+    r53.change_record(
+        'CREATE', dns, params['elb']['alb_zone'], params['elb']['alb_dns'])
 
     logger.info("9. Updating Item in DDB table")
     # update item to include more attributes

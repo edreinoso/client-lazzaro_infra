@@ -11,10 +11,10 @@
       "runtime": "python3.6",
       "region": "eu-central-1",
       "environment": {
-        "environment": "pre",
-        "bucket": "lazzaro-ongs-template-artifacts-pre",
+        "environment": "prod",
+        "bucket": "lazzaro-ongs-template-artifacts-prod",
         "account_id": "648410456371",
-        "ddbTable": "frontend-ddb-client-pre",
+        "ddbTable": "frontend-ddb-client",
         "r53HostedZoneId": "Z05961833L2QBW4GTOR3X"
       },
       "versionFunctions": true,
@@ -80,25 +80,25 @@
           "ClientLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/frontend-ecs-services-pre-client"
+              "LogGroupName": "/aws/lambda/frontend-ecs-services-prod-client"
             }
           },
           "CreateserviceLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/frontend-ecs-services-pre-createservice"
+              "LogGroupName": "/aws/lambda/frontend-ecs-services-prod-createservice"
             }
           },
           "RemoveserviceLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/frontend-ecs-services-pre-removeservice"
+              "LogGroupName": "/aws/lambda/frontend-ecs-services-prod-removeservice"
             }
           },
           "TestserviceLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/frontend-ecs-services-pre-testservice"
+              "LogGroupName": "/aws/lambda/frontend-ecs-services-prod-testservice"
             }
           },
           "ClientLambdaFunction": {
@@ -108,20 +108,20 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/frontend-ecs-services/pre/1624599335309-2021-06-25T05:35:35.309Z/frontend-ecs-services.zip"
+                "S3Key": "serverless/frontend-ecs-services/prod/1624604081072-2021-06-25T06:54:41.072Z/frontend-ecs-services.zip"
               },
-              "FunctionName": "frontend-ecs-services-pre-client",
+              "FunctionName": "frontend-ecs-services-prod-client",
               "Handler": "wsgi_handler.handler",
               "MemorySize": 1024,
-              "Role": "arn:aws:iam::648410456371:role/frontend-client-gateway-role-pre",
+              "Role": "arn:aws:iam::648410456371:role/frontend-client-gateway-role-prod",
               "Runtime": "python3.6",
               "Timeout": 6,
               "Environment": {
                 "Variables": {
-                  "environment": "pre",
-                  "bucket": "lazzaro-ongs-template-artifacts-pre",
+                  "environment": "prod",
+                  "bucket": "lazzaro-ongs-template-artifacts-prod",
                   "account_id": "648410456371",
-                  "ddbTable": "frontend-ddb-client-pre",
+                  "ddbTable": "frontend-ddb-client",
                   "r53HostedZoneId": "Z05961833L2QBW4GTOR3X"
                 }
               }
@@ -130,14 +130,14 @@
               "ClientLogGroup"
             ]
           },
-          "ClientLambdaVersionDm0Mdr6KVJMoU5TQj6BWLfWS9jlJ6PNzghEVTa42xg": {
+          "ClientLambdaVersionT0JpMO4wlMk06tS4D2XM6mms5OG1Xp1EhHjNHiR6Xo": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "ClientLambdaFunction"
               },
-              "CodeSha256": "dAXjPCVInmFU2RMy1ExgeL19V+2PNs1HsUHVlY9gtRE="
+              "CodeSha256": "joFcqQsFqWcA/wX9I0/qE9c6EwRuYZ6eyd4U2B/Llcw="
             }
           },
           "CreateserviceLambdaFunction": {
@@ -147,20 +147,20 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/frontend-ecs-services/pre/1624599335309-2021-06-25T05:35:35.309Z/frontend-ecs-services.zip"
+                "S3Key": "serverless/frontend-ecs-services/prod/1624604081072-2021-06-25T06:54:41.072Z/frontend-ecs-services.zip"
               },
-              "FunctionName": "frontend-ecs-services-pre-createservice",
+              "FunctionName": "frontend-ecs-services-prod-createservice",
               "Handler": "artifacts.handler",
               "MemorySize": 1024,
-              "Role": "arn:aws:iam::648410456371:role/frontend-create-lambda-service-role-pre",
+              "Role": "arn:aws:iam::648410456371:role/frontend-create-lambda-service-role-prod",
               "Runtime": "python3.6",
               "Timeout": 60,
               "Environment": {
                 "Variables": {
-                  "environment": "pre",
-                  "bucket": "lazzaro-ongs-template-artifacts-pre",
+                  "environment": "prod",
+                  "bucket": "lazzaro-ongs-template-artifacts-prod",
                   "account_id": "648410456371",
-                  "ddbTable": "frontend-ddb-client-pre",
+                  "ddbTable": "frontend-ddb-client",
                   "r53HostedZoneId": "Z05961833L2QBW4GTOR3X"
                 }
               }
@@ -169,14 +169,14 @@
               "CreateserviceLogGroup"
             ]
           },
-          "CreateserviceLambdaVersionJnO6AHxt0UTYze1va59lB5L6g2PpZOlTPm4VJS0BQ": {
+          "CreateserviceLambdaVersionJukYVgwKirFJTJB1koylPG9Nud2yX8i79hjXue1gC88": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "CreateserviceLambdaFunction"
               },
-              "CodeSha256": "dAXjPCVInmFU2RMy1ExgeL19V+2PNs1HsUHVlY9gtRE="
+              "CodeSha256": "joFcqQsFqWcA/wX9I0/qE9c6EwRuYZ6eyd4U2B/Llcw="
             }
           },
           "RemoveserviceLambdaFunction": {
@@ -186,20 +186,20 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/frontend-ecs-services/pre/1624599335309-2021-06-25T05:35:35.309Z/frontend-ecs-services.zip"
+                "S3Key": "serverless/frontend-ecs-services/prod/1624604081072-2021-06-25T06:54:41.072Z/frontend-ecs-services.zip"
               },
-              "FunctionName": "frontend-ecs-services-pre-removeservice",
+              "FunctionName": "frontend-ecs-services-prod-removeservice",
               "Handler": "stream.handler",
               "MemorySize": 1024,
-              "Role": "arn:aws:iam::648410456371:role/frontend-delete-lambda-service-role-pre",
+              "Role": "arn:aws:iam::648410456371:role/frontend-delete-lambda-service-role-prod",
               "Runtime": "python3.6",
               "Timeout": 45,
               "Environment": {
                 "Variables": {
-                  "environment": "pre",
-                  "bucket": "lazzaro-ongs-template-artifacts-pre",
+                  "environment": "prod",
+                  "bucket": "lazzaro-ongs-template-artifacts-prod",
                   "account_id": "648410456371",
-                  "ddbTable": "frontend-ddb-client-pre",
+                  "ddbTable": "frontend-ddb-client",
                   "r53HostedZoneId": "Z05961833L2QBW4GTOR3X"
                 }
               }
@@ -208,14 +208,14 @@
               "RemoveserviceLogGroup"
             ]
           },
-          "RemoveserviceLambdaVersionssjYvlV9N8fCMPABu9oyfdONUhY4sHcDOhzvW7Y3l0": {
+          "RemoveserviceLambdaVersionJGboSHctiQS8Q9Y2gfiGDu2oQSqSvAW3XixU6MVCIRo": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "RemoveserviceLambdaFunction"
               },
-              "CodeSha256": "dAXjPCVInmFU2RMy1ExgeL19V+2PNs1HsUHVlY9gtRE="
+              "CodeSha256": "joFcqQsFqWcA/wX9I0/qE9c6EwRuYZ6eyd4U2B/Llcw="
             }
           },
           "TestserviceLambdaFunction": {
@@ -225,9 +225,9 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/frontend-ecs-services/pre/1624599335309-2021-06-25T05:35:35.309Z/frontend-ecs-services.zip"
+                "S3Key": "serverless/frontend-ecs-services/prod/1624604081072-2021-06-25T06:54:41.072Z/frontend-ecs-services.zip"
               },
-              "FunctionName": "frontend-ecs-services-pre-testservice",
+              "FunctionName": "frontend-ecs-services-prod-testservice",
               "Handler": "testdeploy.handler",
               "MemorySize": 1024,
               "Role": "arn:aws:iam::648410456371:role/front_test_delete_soon",
@@ -235,10 +235,10 @@
               "Timeout": 30,
               "Environment": {
                 "Variables": {
-                  "environment": "pre",
-                  "bucket": "lazzaro-ongs-template-artifacts-pre",
+                  "environment": "prod",
+                  "bucket": "lazzaro-ongs-template-artifacts-prod",
                   "account_id": "648410456371",
-                  "ddbTable": "frontend-ddb-client-pre",
+                  "ddbTable": "frontend-ddb-client",
                   "r53HostedZoneId": "Z05961833L2QBW4GTOR3X"
                 }
               }
@@ -247,20 +247,20 @@
               "TestserviceLogGroup"
             ]
           },
-          "TestserviceLambdaVersioncaB2LneyHgzVerFD6eP5Xam4wD045420G4iP0wrg": {
+          "TestserviceLambdaVersionh3hUWkbdU6IQChBCDefvzVQNM3j8FZYxNKQtFidy0": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "TestserviceLambdaFunction"
               },
-              "CodeSha256": "dAXjPCVInmFU2RMy1ExgeL19V+2PNs1HsUHVlY9gtRE="
+              "CodeSha256": "joFcqQsFqWcA/wX9I0/qE9c6EwRuYZ6eyd4U2B/Llcw="
             }
           },
-          "S3BucketLazzaroongstemplateartifactspre": {
+          "S3BucketLazzaroongstemplateartifactsprod": {
             "Type": "AWS::S3::Bucket",
             "Properties": {
-              "BucketName": "lazzaro-ongs-template-artifacts-pre",
+              "BucketName": "lazzaro-ongs-template-artifacts-prod",
               "NotificationConfiguration": {
                 "LambdaConfigurations": [
                   {
@@ -276,10 +276,10 @@
               }
             },
             "DependsOn": [
-              "CreateserviceLambdaPermissionLazzaroongstemplateartifactspreS3"
+              "CreateserviceLambdaPermissionLazzaroongstemplateartifactsprodS3"
             ]
           },
-          "CreateserviceLambdaPermissionLazzaroongstemplateartifactspreS3": {
+          "CreateserviceLambdaPermissionLazzaroongstemplateartifactsprodS3": {
             "Type": "AWS::Lambda::Permission",
             "Properties": {
               "FunctionName": {
@@ -298,7 +298,7 @@
                     {
                       "Ref": "AWS::Partition"
                     },
-                    ":s3:::lazzaro-ongs-template-artifacts-pre"
+                    ":s3:::lazzaro-ongs-template-artifacts-prod"
                   ]
                 ]
               },
@@ -310,7 +310,7 @@
           "ApiGatewayRestApi": {
             "Type": "AWS::ApiGateway::RestApi",
             "Properties": {
-              "Name": "pre-frontend-ecs-services",
+              "Name": "prod-frontend-ecs-services",
               "EndpointConfiguration": {
                 "Types": [
                   "EDGE"
@@ -435,13 +435,13 @@
               "MethodResponses": []
             }
           },
-          "ApiGatewayDeployment1624599321297": {
+          "ApiGatewayDeployment1624604065117": {
             "Type": "AWS::ApiGateway::Deployment",
             "Properties": {
               "RestApiId": {
                 "Ref": "ApiGatewayRestApi"
               },
-              "StageName": "pre"
+              "StageName": "prod"
             },
             "DependsOn": [
               "ApiGatewayMethodCreateclientPost",
@@ -495,25 +495,25 @@
           "ClientLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "ClientLambdaVersionDm0Mdr6KVJMoU5TQj6BWLfWS9jlJ6PNzghEVTa42xg"
+              "Ref": "ClientLambdaVersionT0JpMO4wlMk06tS4D2XM6mms5OG1Xp1EhHjNHiR6Xo"
             }
           },
           "CreateserviceLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "CreateserviceLambdaVersionJnO6AHxt0UTYze1va59lB5L6g2PpZOlTPm4VJS0BQ"
+              "Ref": "CreateserviceLambdaVersionJukYVgwKirFJTJB1koylPG9Nud2yX8i79hjXue1gC88"
             }
           },
           "RemoveserviceLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "RemoveserviceLambdaVersionssjYvlV9N8fCMPABu9oyfdONUhY4sHcDOhzvW7Y3l0"
+              "Ref": "RemoveserviceLambdaVersionJGboSHctiQS8Q9Y2gfiGDu2oQSqSvAW3XixU6MVCIRo"
             }
           },
           "TestserviceLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "TestserviceLambdaVersioncaB2LneyHgzVerFD6eP5Xam4wD045420G4iP0wrg"
+              "Ref": "TestserviceLambdaVersionh3hUWkbdU6IQChBCDefvzVQNM3j8FZYxNKQtFidy0"
             }
           },
           "ServiceEndpoint": {
@@ -534,7 +534,7 @@
                   {
                     "Ref": "AWS::URLSuffix"
                   },
-                  "/pre"
+                  "/prod"
                 ]
               ]
             }
@@ -628,7 +628,7 @@
     "functions": {
       "client": {
         "handler": "wsgi_handler.handler",
-        "role": "arn:aws:iam::648410456371:role/frontend-client-gateway-role-pre",
+        "role": "arn:aws:iam::648410456371:role/frontend-client-gateway-role-prod",
         "events": [
           {
             "http": {
@@ -645,56 +645,56 @@
             }
           }
         ],
-        "name": "frontend-ecs-services-pre-client",
+        "name": "frontend-ecs-services-prod-client",
         "package": {},
         "memory": 1024,
         "timeout": 6,
         "runtime": "python3.6",
         "vpc": {},
-        "versionLogicalId": "ClientLambdaVersionDm0Mdr6KVJMoU5TQj6BWLfWS9jlJ6PNzghEVTa42xg"
+        "versionLogicalId": "ClientLambdaVersionT0JpMO4wlMk06tS4D2XM6mms5OG1Xp1EhHjNHiR6Xo"
       },
       "createservice": {
         "handler": "artifacts.handler",
-        "role": "arn:aws:iam::648410456371:role/frontend-create-lambda-service-role-pre",
+        "role": "arn:aws:iam::648410456371:role/frontend-create-lambda-service-role-prod",
         "timeout": 60,
         "events": [
           {
             "s3": {
-              "bucket": "lazzaro-ongs-template-artifacts-pre",
+              "bucket": "lazzaro-ongs-template-artifacts-prod",
               "event": "s3:ObjectCreated:Put"
             }
           }
         ],
-        "name": "frontend-ecs-services-pre-createservice",
+        "name": "frontend-ecs-services-prod-createservice",
         "package": {},
         "memory": 1024,
         "runtime": "python3.6",
         "vpc": {},
-        "versionLogicalId": "CreateserviceLambdaVersionJnO6AHxt0UTYze1va59lB5L6g2PpZOlTPm4VJS0BQ"
+        "versionLogicalId": "CreateserviceLambdaVersionJukYVgwKirFJTJB1koylPG9Nud2yX8i79hjXue1gC88"
       },
       "removeservice": {
         "handler": "stream.handler",
-        "role": "arn:aws:iam::648410456371:role/frontend-delete-lambda-service-role-pre",
+        "role": "arn:aws:iam::648410456371:role/frontend-delete-lambda-service-role-prod",
         "timeout": 45,
         "events": [],
-        "name": "frontend-ecs-services-pre-removeservice",
+        "name": "frontend-ecs-services-prod-removeservice",
         "package": {},
         "memory": 1024,
         "runtime": "python3.6",
         "vpc": {},
-        "versionLogicalId": "RemoveserviceLambdaVersionssjYvlV9N8fCMPABu9oyfdONUhY4sHcDOhzvW7Y3l0"
+        "versionLogicalId": "RemoveserviceLambdaVersionJGboSHctiQS8Q9Y2gfiGDu2oQSqSvAW3XixU6MVCIRo"
       },
       "testservice": {
         "handler": "testdeploy.handler",
         "role": "arn:aws:iam::648410456371:role/front_test_delete_soon",
         "timeout": 30,
         "events": [],
-        "name": "frontend-ecs-services-pre-testservice",
+        "name": "frontend-ecs-services-prod-testservice",
         "package": {},
         "memory": 1024,
         "runtime": "python3.6",
         "vpc": {},
-        "versionLogicalId": "TestserviceLambdaVersioncaB2LneyHgzVerFD6eP5Xam4wD045420G4iP0wrg"
+        "versionLogicalId": "TestserviceLambdaVersionh3hUWkbdU6IQChBCDefvzVQNM3j8FZYxNKQtFidy0"
       }
     },
     "serviceFilename": "serverless.yml",
@@ -703,7 +703,7 @@
     "artifact": "/Users/elchoco/development/web/lazzaro/lazzaro_infrastructure/serverless/.serverless/frontend-ecs-services.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/frontend-ecs-services/pre/1624599335309-2021-06-25T05:35:35.309Z",
+    "artifactDirectoryName": "serverless/frontend-ecs-services/prod/1624604081072-2021-06-25T06:54:41.072Z",
     "artifact": "frontend-ecs-services.zip"
   }
 }
