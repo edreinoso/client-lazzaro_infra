@@ -103,6 +103,7 @@ def handle_service_creation(client, params):
 
 
 def handler(event, context):
+    # params init
     new_params = get_params()
 
     # getting the parameters

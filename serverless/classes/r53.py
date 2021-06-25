@@ -1,6 +1,5 @@
 import os
 import boto3
-import os
 import botocore
 import logging
 

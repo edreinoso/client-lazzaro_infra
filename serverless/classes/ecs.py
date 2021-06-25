@@ -1,6 +1,5 @@
 import os
 import boto3
-import os
 import botocore
 import logging
 
@@ -144,5 +143,49 @@ class ecs_service():
         except botocore.exceptions.ClientError as error:
             if error.response['Error']['Code'] == 'InvalidParameterException':
                 logger.warn('Service already existing')
+            else:
+                raise error
+
+    def delete_logs(self, log_group_name):
+        self.log_group_name = log_group_name
+        
+        try:
+            log_client.delete_log_group(
+                logGroupName=log_group_name,
+            )
+        except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == 'ResourceNotFoundException':
+                logger.warn('Resource has been already deleted')
+            else:
+                raise error
+
+    def delete_service(self, service_name, cluster_arn):
+        self.service_name = service_name
+        self.cluster_arn = cluster_arn
+
+        try:
+            ecs_client.delete_service(
+                cluster=cluster_arn,
+                service=service_name,
+                force=True
+            )
+        except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == 'ServiceNotFoundException':
+                logger.warn('Service not found')
+            elif error.response['Error']['Code'] == 'InvalidParameterException':
+                logger.warn('Service must match ^[a-zA-Z0-9\-_]{1,255}$')
+            else:
+                raise error
+
+    def deregister_task(self, taskd_arn):
+        self.taskd_arn = taskd_arn
+
+        try:
+            ecs_client.deregister_task_definition(
+                taskDefinition=taskd_arn
+            )
+        except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == 'InvalidParameterException':
+                logger.warn('Task Definition can not be blank')
             else:
                 raise error

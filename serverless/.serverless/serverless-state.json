@@ -108,7 +108,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/frontend-ecs-services/pre/1624551338201-2021-06-24T16:15:38.201Z/frontend-ecs-services.zip"
+                "S3Key": "serverless/frontend-ecs-services/pre/1624599335309-2021-06-25T05:35:35.309Z/frontend-ecs-services.zip"
               },
               "FunctionName": "frontend-ecs-services-pre-client",
               "Handler": "wsgi_handler.handler",
@@ -130,14 +130,14 @@
               "ClientLogGroup"
             ]
           },
-          "ClientLambdaVersionGew4ndzy10fk513vES0qh7tSDVsFQMtAp7SODHtlxSE": {
+          "ClientLambdaVersionDm0Mdr6KVJMoU5TQj6BWLfWS9jlJ6PNzghEVTa42xg": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "ClientLambdaFunction"
               },
-              "CodeSha256": "878xgLLVhu0K6IKUSK34AMo4z75vFgHennCxhM8ehUA="
+              "CodeSha256": "dAXjPCVInmFU2RMy1ExgeL19V+2PNs1HsUHVlY9gtRE="
             }
           },
           "CreateserviceLambdaFunction": {
@@ -147,7 +147,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/frontend-ecs-services/pre/1624551338201-2021-06-24T16:15:38.201Z/frontend-ecs-services.zip"
+                "S3Key": "serverless/frontend-ecs-services/pre/1624599335309-2021-06-25T05:35:35.309Z/frontend-ecs-services.zip"
               },
               "FunctionName": "frontend-ecs-services-pre-createservice",
               "Handler": "artifacts.handler",
@@ -169,14 +169,14 @@
               "CreateserviceLogGroup"
             ]
           },
-          "CreateserviceLambdaVersionpxRO1We8DsUXVUfh1TsQewem3Gn0kxySiUTEpCTIS7c": {
+          "CreateserviceLambdaVersionJnO6AHxt0UTYze1va59lB5L6g2PpZOlTPm4VJS0BQ": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "CreateserviceLambdaFunction"
               },
-              "CodeSha256": "878xgLLVhu0K6IKUSK34AMo4z75vFgHennCxhM8ehUA="
+              "CodeSha256": "dAXjPCVInmFU2RMy1ExgeL19V+2PNs1HsUHVlY9gtRE="
             }
           },
           "RemoveserviceLambdaFunction": {
@@ -186,7 +186,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/frontend-ecs-services/pre/1624551338201-2021-06-24T16:15:38.201Z/frontend-ecs-services.zip"
+                "S3Key": "serverless/frontend-ecs-services/pre/1624599335309-2021-06-25T05:35:35.309Z/frontend-ecs-services.zip"
               },
               "FunctionName": "frontend-ecs-services-pre-removeservice",
               "Handler": "stream.handler",
@@ -208,14 +208,14 @@
               "RemoveserviceLogGroup"
             ]
           },
-          "RemoveserviceLambdaVersionAMc7EXwdppPY96tCQI4ey2gVzyNmrIOoEjEvt44o": {
+          "RemoveserviceLambdaVersionssjYvlV9N8fCMPABu9oyfdONUhY4sHcDOhzvW7Y3l0": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "RemoveserviceLambdaFunction"
               },
-              "CodeSha256": "878xgLLVhu0K6IKUSK34AMo4z75vFgHennCxhM8ehUA="
+              "CodeSha256": "dAXjPCVInmFU2RMy1ExgeL19V+2PNs1HsUHVlY9gtRE="
             }
           },
           "TestserviceLambdaFunction": {
@@ -225,7 +225,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/frontend-ecs-services/pre/1624551338201-2021-06-24T16:15:38.201Z/frontend-ecs-services.zip"
+                "S3Key": "serverless/frontend-ecs-services/pre/1624599335309-2021-06-25T05:35:35.309Z/frontend-ecs-services.zip"
               },
               "FunctionName": "frontend-ecs-services-pre-testservice",
               "Handler": "testdeploy.handler",
@@ -247,14 +247,14 @@
               "TestserviceLogGroup"
             ]
           },
-          "TestserviceLambdaVersionWXrCCbuAbYi11IQnaJewmRWyTV8OiiUdBx3vMeI": {
+          "TestserviceLambdaVersioncaB2LneyHgzVerFD6eP5Xam4wD045420G4iP0wrg": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "TestserviceLambdaFunction"
               },
-              "CodeSha256": "878xgLLVhu0K6IKUSK34AMo4z75vFgHennCxhM8ehUA="
+              "CodeSha256": "dAXjPCVInmFU2RMy1ExgeL19V+2PNs1HsUHVlY9gtRE="
             }
           },
           "S3BucketLazzaroongstemplateartifactspre": {
@@ -435,7 +435,7 @@
               "MethodResponses": []
             }
           },
-          "ApiGatewayDeployment1624551324461": {
+          "ApiGatewayDeployment1624599321297": {
             "Type": "AWS::ApiGateway::Deployment",
             "Properties": {
               "RestApiId": {
@@ -495,25 +495,25 @@
           "ClientLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "ClientLambdaVersionGew4ndzy10fk513vES0qh7tSDVsFQMtAp7SODHtlxSE"
+              "Ref": "ClientLambdaVersionDm0Mdr6KVJMoU5TQj6BWLfWS9jlJ6PNzghEVTa42xg"
             }
           },
           "CreateserviceLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "CreateserviceLambdaVersionpxRO1We8DsUXVUfh1TsQewem3Gn0kxySiUTEpCTIS7c"
+              "Ref": "CreateserviceLambdaVersionJnO6AHxt0UTYze1va59lB5L6g2PpZOlTPm4VJS0BQ"
             }
           },
           "RemoveserviceLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "RemoveserviceLambdaVersionAMc7EXwdppPY96tCQI4ey2gVzyNmrIOoEjEvt44o"
+              "Ref": "RemoveserviceLambdaVersionssjYvlV9N8fCMPABu9oyfdONUhY4sHcDOhzvW7Y3l0"
             }
           },
           "TestserviceLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "TestserviceLambdaVersionWXrCCbuAbYi11IQnaJewmRWyTV8OiiUdBx3vMeI"
+              "Ref": "TestserviceLambdaVersioncaB2LneyHgzVerFD6eP5Xam4wD045420G4iP0wrg"
             }
           },
           "ServiceEndpoint": {
@@ -651,7 +651,7 @@
         "timeout": 6,
         "runtime": "python3.6",
         "vpc": {},
-        "versionLogicalId": "ClientLambdaVersionGew4ndzy10fk513vES0qh7tSDVsFQMtAp7SODHtlxSE"
+        "versionLogicalId": "ClientLambdaVersionDm0Mdr6KVJMoU5TQj6BWLfWS9jlJ6PNzghEVTa42xg"
       },
       "createservice": {
         "handler": "artifacts.handler",
@@ -670,7 +670,7 @@
         "memory": 1024,
         "runtime": "python3.6",
         "vpc": {},
-        "versionLogicalId": "CreateserviceLambdaVersionpxRO1We8DsUXVUfh1TsQewem3Gn0kxySiUTEpCTIS7c"
+        "versionLogicalId": "CreateserviceLambdaVersionJnO6AHxt0UTYze1va59lB5L6g2PpZOlTPm4VJS0BQ"
       },
       "removeservice": {
         "handler": "stream.handler",
@@ -682,7 +682,7 @@
         "memory": 1024,
         "runtime": "python3.6",
         "vpc": {},
-        "versionLogicalId": "RemoveserviceLambdaVersionAMc7EXwdppPY96tCQI4ey2gVzyNmrIOoEjEvt44o"
+        "versionLogicalId": "RemoveserviceLambdaVersionssjYvlV9N8fCMPABu9oyfdONUhY4sHcDOhzvW7Y3l0"
       },
       "testservice": {
         "handler": "testdeploy.handler",
@@ -694,7 +694,7 @@
         "memory": 1024,
         "runtime": "python3.6",
         "vpc": {},
-        "versionLogicalId": "TestserviceLambdaVersionWXrCCbuAbYi11IQnaJewmRWyTV8OiiUdBx3vMeI"
+        "versionLogicalId": "TestserviceLambdaVersioncaB2LneyHgzVerFD6eP5Xam4wD045420G4iP0wrg"
       }
     },
     "serviceFilename": "serverless.yml",
@@ -703,7 +703,7 @@
     "artifact": "/Users/elchoco/development/web/lazzaro/lazzaro_infrastructure/serverless/.serverless/frontend-ecs-services.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/frontend-ecs-services/pre/1624551338201-2021-06-24T16:15:38.201Z",
+    "artifactDirectoryName": "serverless/frontend-ecs-services/pre/1624599335309-2021-06-25T05:35:35.309Z",
     "artifact": "frontend-ecs-services.zip"
   }
 }

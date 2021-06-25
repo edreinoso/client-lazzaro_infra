@@ -2,3 +2,4 @@
 .env.pre
 .env.prod
 .terraform
+node_modules/

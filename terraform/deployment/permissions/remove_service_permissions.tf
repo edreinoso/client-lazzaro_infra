@@ -139,7 +139,7 @@ resource "aws_iam_role" "removeservice_permission" {
       Statement = [
         {
           Action   = [
-            "ssm:GetParameter"
+            "ssm:GetParametersByPath"
           ]
           Effect   = "Allow"
           Resource = "arn:aws:ssm:eu-central-1:648410456371:parameter/*"

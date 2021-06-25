@@ -198,3 +198,27 @@ class elb_service():
         alb_listener['rule_arn'] = rule_arn
 
         return alb_listener
+
+    def delete_listener_rule(self, rule_arn):
+        try:
+            elb_client.delete_rule(
+                RuleArn=rule_arn
+            )
+        except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == 'ValidationError':
+                logger.warn('A listener rule ARN must be specified')
+            else:
+                raise error
+    
+    def delete_target_group(self, target_arn): 
+        try:
+            elb_client.delete_target_group(
+                TargetGroupArn=target_arn
+            )
+        except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == 'ValidationError':
+                logger.warn('A target group ARN must be specified')
+            elif error.response['Error']['Code'] == 'ResourceInUse':
+                logger.warn('Target group is currently in used by a listener')
+            else:
+                raise error
