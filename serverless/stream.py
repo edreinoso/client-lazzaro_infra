@@ -24,6 +24,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     elb = elb_service()
     r53 = update_record()
     adhoc = adhoc_delete()
+    sqs = security_group()
 
     # Local vars
     log_group_name = '/ecs/front/'+client
@@ -72,27 +73,9 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     r53.change_record(
         'DELETE', dns, params['elb']['alb_zone'], params['elb']['alb_dns'])
 
-    # logger.info('10. Deleting Security Group')
-    # security group
-    # this needs to be changed to invoke a eventbridge
-    # should pass a cron of 5 minutes from now
-    # try:
-    #     sg_client.delete_security_group(
-    #         GroupId=security_group_id
-    #     )
-    #     # MissingParameter
-    # except botocore.exceptions.ClientError as error:
-    #     if error.response['Error']['Code'] == 'MissingParameter':
-    #         logger.warn(
-    #             'The request must contain the parameter groupName or groupId')
-    #     elif error.response['Error']['Code'] == 'InvalidGroup.NotFound':
-    #         logger.warn(
-    #             'The security group does not exist')
-    #     elif error.response['Error']['Code'] == 'DependencyViolation':
-    #         logger.warn(
-    #             'The security group has a dependent object')
-    #     else:
-    #         raise error
+    logger.info('10. Calling SQS queue')
+    # sqs queue
+    sqs.call_sqs_queue(client, security_group_id, params['ecs']['queue_url'])
 
 
 def handler(event, context):

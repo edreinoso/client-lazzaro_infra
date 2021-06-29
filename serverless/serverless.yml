@@ -24,10 +24,10 @@ provider:
     bucket: ${env:bucket}
 
 functions:
-  ## Creation process
+  ## Client gateway function
   client:
     handler: wsgi_handler.handler
-    role: arn:aws:iam::648410456371:role/frontend-client-gateway-role-${env:environment}
+    role: arn:aws:iam::${env:account_id}:role/frontend-client-gateway-role-${env:environment}
     events:
       - http:
           path: "/createclient"
@@ -36,20 +36,20 @@ functions:
           path: "/removeclient"
           method: delete
   
-  ## Creation process
+  ## Creation function
   createservice:
     handler: artifacts.handler
-    role: arn:aws:iam::648410456371:role/frontend-create-lambda-service-role-${env:environment}
+    role: arn:aws:iam::${env:account_id}:role/frontend-create-lambda-service-role-${env:environment}
     timeout: 60
     events:
       - s3:
           bucket: lazzaro-ongs-template-artifacts-${env:environment}
           event: s3:ObjectCreated:Put
   
-  ## Deletion process
+  ## Deletion function
   removeservice:
     handler: stream.handler
-    role: arn:aws:iam::648410456371:role/frontend-delete-lambda-service-role-${env:environment}
+    role: arn:aws:iam::${env:account_id}:role/frontend-delete-lambda-service-role-${env:environment}
     timeout: 45
     events:
       # how to dynamically configure based on events
@@ -57,16 +57,28 @@ functions:
       #   type: dynamodb
       #   arn:
       #     Fn::GetAtt: [ ClientTable, StreamArn ]
-      # - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client-${env:environment}/stream/*    
-      # - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502 # prod
+      # - stream: arn:aws:dynamodb:eu-central-1:${env:account_id}:table/frontend-ddb-client-${env:environment}/stream/*    
+      # - stream: arn:aws:dynamodb:eu-central-1:${env:account_id}:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502 # prod
   
   ## Test ssm parameter retrieval
   testservice:
     handler: testdeploy.handler
-    role: arn:aws:iam::648410456371:role/front_test_delete_soon
+    role: arn:aws:iam::${env:account_id}:role/frontend-test-service-role-${env:environment}
+    timeout: 30
+    # events:
+    #   - sqs:
+    #     arn: arn:aws:sqs:us-east-1:${env:account_id}:lazzaro-sqs-service-${env:environment}
+    #     batchSize: 10
+
+  ## Security group remove
+  deletesecuritygroup:
+    handler: removesg.handler
+    role: arn:aws:iam::${env:account_id}:role/frontend-delete-sg-service-role-${env:environment}
     timeout: 30
     events:
-      # - stream: arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client-pre/stream/2021-06-14T12:58:14.004
+      - sqs:
+        arn: arn:aws:sqs:us-east-1:${env:account_id}:lazzaro-sqs-service-${env:environment}
+        batchSize: 10
 
 # resources:
   # - ${file(resources/ddb_table.yml)}

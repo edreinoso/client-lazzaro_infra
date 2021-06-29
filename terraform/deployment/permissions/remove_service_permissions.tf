@@ -119,14 +119,11 @@ resource "aws_iam_role" "removeservice_permission" {
         },
         {
           Action   = [
-            "ec2:DeleteSecurityGroup"
+            "sqs:SendMessage"
           ]
           Effect   = "Allow"
-          Resource = [
-            "arn:aws:ec2:eu-central-1:648410456371:security-group/*",
-            "arn:aws:ec2:eu-central-1:648410456371:vpc/*"
-          ]
-        },
+          Resource = "arn:aws:sqs:eu-central-1:648410456371:lazzaro-sqs-service-${terraform.workspace}"
+        }
       ]
     })
   }

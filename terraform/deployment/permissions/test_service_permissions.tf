@@ -18,15 +18,6 @@ resource "aws_iam_role" "testservice_permission" {
           Effect   = "Allow"
           Resource = "*"
         },
-        # {
-        #   Action   = [
-        #   ]
-        #   Effect   = "Allow"
-        #   Resource: [
-        #     "arn:aws:logs:eu-central-1:648410456371:log-group:frontend-ecs-services-${terraform.workspace}-createservice:log-stream:*",
-        #     "arn:aws:logs:eu-central-1:648410456371:log-group:frontend-ecs-services-${terraform.workspace}-createservice"
-        #   ]
-        # },
       ]
     })
   }
@@ -44,6 +35,23 @@ resource "aws_iam_role" "testservice_permission" {
           Effect   = "Allow"
           Resource = "arn:aws:ssm:eu-central-1:648410456371:parameter/*"
         }
+      ]
+    })
+  }
+  # sqs
+  inline_policy {
+    name = "sqs"
+
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action   = [
+            "sqs:SendMessage"
+          ]
+          Effect   = "Allow"
+          Resource = "arn:aws:sqs:eu-central-1:648410456371:lazzaro-sqs-service-${terraform.workspace}"
+        },
       ]
     })
   }

@@ -6,16 +6,18 @@ from boto3.dynamodb.conditions import Key
 import logging
 import sys
 sys.path.append("./classes")
-from params import get_params
 from ecs import ecs_service
 from elb import elb_service
 from sg import security_group
 from ddb import update_table, query_table
 from r53 import update_record
 from adhoc import adhoc_delete
+from params import get_params
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
 
 def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, security_group_id, params):
     # Init classes
@@ -23,6 +25,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     elb = elb_service()
     r53 = update_record()
     adhoc = adhoc_delete()
+    sqs = security_group()
 
     # Local vars
     log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
@@ -59,7 +62,8 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
 
     logger.info('7. Deleting image from ECR')
     # ecr image
-    adhoc.delete_image(os.environ['account_id'], params['ecs']['repo_name'], client)
+    adhoc.delete_image(os.environ['account_id'],
+                       params['ecs']['repo_name'], client)
 
     logger.info('8. Deleting build')
     # code build
@@ -67,29 +71,12 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
 
     logger.info('9. Deleting Route 53 record')
     # record set
-    r53.change_record('DELETE', dns, params['elb']['alb_zone'], params['elb']['alb_dns'])
+    r53.change_record(
+        'DELETE', dns, params['elb']['alb_zone'], params['elb']['alb_dns'])
 
-    # logger.info('10. Deleting Security Group')
-    # security group
-    # this needs to be changed to invoke a eventbridge
-    # should pass a cron of 5 minutes from now
-    # try:
-    #     sg_client.delete_security_group(
-    #         GroupId=security_group_id
-    #     )
-    #     # MissingParameter
-    # except botocore.exceptions.ClientError as error:
-    #     if error.response['Error']['Code'] == 'MissingParameter':
-    #         logger.warn(
-    #             'The request must contain the parameter groupName or groupId')
-    #     elif error.response['Error']['Code'] == 'InvalidGroup.NotFound':
-    #         logger.warn(
-    #             'The security group does not exist')
-    #     elif error.response['Error']['Code'] == 'DependencyViolation':
-    #         logger.warn(
-    #             'The security group has a dependent object')
-    #     else:
-    #         raise error
+    logger.info('10. Calling SQS queue')
+    # sqs queue !
+    sqs.call_sqs_queue(client, security_group_id, params['ecs']['queue_url'])
 
 
 def handler(event, context):
@@ -100,7 +87,7 @@ def handler(event, context):
     params = new_params.handler(os.environ['environment'])
 
     print(params)
-    
+
     if(event['Records'][0]['eventName'] == "REMOVE"):
         logger.info(event['Records'][0])  # need to judge whether there is
         # declaration of variables
@@ -119,7 +106,8 @@ def handler(event, context):
         # handling_service_deletion(client, buildid) # this is an empty build
     else:
         logger.info("Stream was not REMOVE")
-        logger.info("Stream was,: %s instead of REMOVED", event['Records'][0]['eventName'])
+        logger.info("Stream was,: %s instead of REMOVED",
+                    event['Records'][0]['eventName'])
 
     return {
         'statusCode': 200,

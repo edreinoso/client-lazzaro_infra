@@ -18,6 +18,14 @@ data "terraform_remote_state" "ecs_role" {
   }
 }
 
+data "terraform_remote_state" "sqs_queue" {
+  backend = "s3"
+  config = {
+    bucket = "terraform-state-lazzaro"
+    key    = "env:/${terraform.workspace}/deployment/services/sqs.tfstate"
+    region = "eu-central-1"
+  }
+}
 
 # dynamic variables according to the environment
 ## ecr repo name
@@ -54,4 +62,11 @@ resource "aws_ssm_parameter" "role" {
   name  = "/${terraform.workspace}/front/services/ecs/role_arn"
   type  = "String"
   value = data.terraform_remote_state.ecs_role.outputs.ecs_role_arn
+}
+
+## queue url
+resource "aws_ssm_parameter" "queue_url" {
+  name = "/${terraform.workspace}/front/services/ecs/queue_url"
+  type  = "String"
+  value = data.terraform_remote_state.sqs_queue.outputs.url
 }

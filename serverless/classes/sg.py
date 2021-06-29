@@ -7,6 +7,8 @@ logger = logging.getLogger()
 
 # Global vars: boto3 init
 sg_client = boto3.client('ec2')
+sqs_client = boto3.client('sqs')
+
 
 class security_group():
     def create_security_group(self, client, port, alb_sg, vpc_id, sg_name):
@@ -88,3 +90,38 @@ class security_group():
                 raise error
         
         return sg_id
+
+    def delete_security_group(self, security_group_id):
+        self.security_group_id = security_group_id
+        response = ''
+        try:
+            response = sg_client.delete_security_group(
+                GroupId=security_group_id,
+            )
+        except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == 'InvalidGroup.NotFound':
+                logger.warn(
+                    'Security group not found!')
+            elif error.response['Error']['Code'] == 'UnauthorizedOperation':
+                logger.warn('Unauthorized to perform DeleteSecurityGroup')
+            else:
+                raise error
+
+
+        return response
+
+    def call_sqs_queue(self, client, sg_id, sqs_url):
+        self.client = client
+        self.sg_id = sg_id
+        self.sqs_url = sqs_url
+
+        sqs_client.send_message(
+            QueueUrl=sqs_url,
+            MessageBody="Calling the sqs queue to delete security group for client: " + client,
+            MessageAttributes={
+                'sgId': {
+                    'StringValue': sg_id,
+                    'DataType': 'String'
+                },
+            }
+        )
