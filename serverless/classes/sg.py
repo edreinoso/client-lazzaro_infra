@@ -112,16 +112,19 @@ class security_group():
 
     def call_sqs_queue(self, client, sg_id, sqs_url):
         self.client = client
-        self.sg_id = sg_id
+        self.sg_id = sg_id # there needs to be an exception here to handle empty strings
         self.sqs_url = sqs_url
 
-        sqs_client.send_message(
-            QueueUrl=sqs_url,
-            MessageBody="Calling the sqs queue to delete security group for client: " + client,
-            MessageAttributes={
-                'sgId': {
-                    'StringValue': sg_id,
-                    'DataType': 'String'
-                },
-            }
-        )
+        if (sg_id == ""):
+            logger.warn("Nothing to do since the security group was empty")
+        else:
+            sqs_client.send_message(
+                QueueUrl=sqs_url,
+                MessageBody="Calling the sqs queue to delete security group for client: " + client,
+                MessageAttributes={
+                    'sgId': {
+                        'StringValue': sg_id,
+                        'DataType': 'String'
+                    },
+                }
+            )
