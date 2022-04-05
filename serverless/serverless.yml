@@ -35,7 +35,7 @@ functions:
       - http:
           path: "/removeclient"
           method: delete
-  
+
   ## Creation function
   createservice:
     handler: artifacts.handler
@@ -45,30 +45,26 @@ functions:
       - s3:
           bucket: lazzaro-ongs-template-artifacts-${env:environment}
           event: s3:ObjectCreated:Put
-  
+          existing: true
+
   ## Deletion function
   removeservice:
     handler: stream.handler
     role: arn:aws:iam::${env:account_id}:role/frontend-delete-lambda-service-role-${env:environment}
     timeout: 45
     events:
-      # how to dynamically configure based on events
-      # - stream:
-      #   type: dynamodb
-      #   arn:
-      #     Fn::GetAtt: [ ClientTable, StreamArn ]
-      # - stream: arn:aws:dynamodb:eu-central-1:${env:account_id}:table/frontend-ddb-client-${env:environment}/stream/*    
-      # - stream: arn:aws:dynamodb:eu-central-1:${env:account_id}:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502 # prod
-  
-  ## Test ssm parameter retrieval
+      - stream:
+          arn: ${env:stream_arn}
+          batchSize: 10
+          startingPosition: LATEST
+          maximumRetryAttempts: 2
+          enabled: false
+
+  ## Test function
   testservice:
     handler: testdeploy.handler
     role: arn:aws:iam::${env:account_id}:role/frontend-test-service-role-${env:environment}
     timeout: 30
-    # events:
-    #   - sqs:
-    #     arn: arn:aws:sqs:us-east-1:${env:account_id}:lazzaro-sqs-service-${env:environment}
-    #     batchSize: 10
 
   ## Security group remove
   deletesecuritygroup:
@@ -77,29 +73,7 @@ functions:
     timeout: 30
     events:
       - sqs:
-        arn: arn:aws:sqs:us-east-1:${env:account_id}:lazzaro-sqs-service-${env:environment}
-        batchSize: 10
-
+          arn: arn:aws:sqs:eu-central-1:${env:account_id}:lazzaro-sqs-service-${env:environment}
+          batchSize: 10
 # resources:
-  # - ${file(resources/ddb_table.yml)}
-  # Resources:
-  #   ClientTable:
-  #     Type: "AWS::DynamoDB::Table"
-  #     Properties:
-  #       AttributeDefinitions:
-  #         - AttributeName: Client
-  #           AttributeType: S
-  #       KeySchema:
-  #         - AttributeName: Client
-  #           KeyType: HASH
-  #       ProvisionedThroughput:
-  #         ReadCapacityUnits: 5
-  #         WriteCapacityUnits: 5
-  #       TableName: frontend-ddb-client-${env:environment}
-  #       Tags:
-  #         - Key: "Name"
-  #           Value: frontend-ddb-client-${env:environment}
-  #         - Key: "Creation_Date"
-  #           Value: "14 June 2021"
-  #       StreamSpecification:
-  #         StreamViewType: NEW_AND_OLD_IMAGES
+# - ${file(resources/ddb_table.yml)}
