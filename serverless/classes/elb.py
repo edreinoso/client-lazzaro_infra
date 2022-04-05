@@ -35,7 +35,6 @@ class elb_service():
                 logger.warn(
                     'A target group with the same name ' + client + ' exists, but with different settings')
                 targetg = elb_client.describe_target_groups(
-                    LoadBalancerArn=alb_arn,
                     Names=[client]
                 )
                 target_arn = targetg['TargetGroups'][0]['TargetGroupArn']
