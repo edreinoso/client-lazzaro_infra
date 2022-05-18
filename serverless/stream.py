@@ -6,13 +6,13 @@ from boto3.dynamodb.conditions import Key
 import logging
 import sys
 sys.path.append("./classes")
-from params import get_params
-from adhoc import adhoc_delete
-from r53 import update_record
-from ddb import update_table, query_table
-from sg import security_group
-from elb import elb_service
 from ecs import ecs_service
+from elb import elb_service
+from sg import security_group
+from ddb import update_table, query_table
+from r53 import update_record
+from adhoc import adhoc_delete
+from params import get_params
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -27,10 +27,19 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     sqs = security_group()
 
     # Local vars
-    log_group_name = '/ecs/front/'+client
-    service_name = 'service_'+client
-    s3_key = 'frontend-code-build-service/'+client+'.json'
-    dns = client+'.web.lazzaro.io'
+    
+    # need to have this condition since the name for the
+    # log groups are different
+    if (os.environ['environment'] == 'pre'):
+        log_group_name = '/ecs/front/pre/'+client
+        service_name = 'service_pre_'+client
+        s3_key = 'frontend-code-build-service-pre/'+client+'.json'
+        dns = 'pre'+client+'.web.lazzaro.io'
+    else:
+        service_name = 'service_'+client
+        s3_key = 'frontend-code-build-service/'+client+'.json'
+        log_group_name = '/ecs/front/'+client
+        dns = client+'.web.lazzaro.io'
 
     logger.info('Handling service deletion')
 
@@ -82,7 +91,7 @@ def handler(event, context):
     # params init
     new_params = get_params()
 
-    ## getting the parameters
+    # getting the parameters
     params = new_params.handler(os.environ['environment'])
 
     print(params)
