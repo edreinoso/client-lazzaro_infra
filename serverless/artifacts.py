@@ -12,6 +12,7 @@ from sg import security_group
 from ddb import update_table, query_table
 from r53 import update_record
 
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -26,16 +27,30 @@ task_definition_fam = 'task_definition_'+os.environ['environment']+'_'+client
 service_name = 'service_'+os.environ['environment']+'_'+client
 """
 
+
 def handle_service_creation(client, params):
     # Local vars
     image = params['ecs']['image']+client
     container_name = params['ecs']['container']+client
-    dns = os.environ['environment']+client+'.web.lazzaro.io'
-    log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
-    target_group_name = os.environ['environment']+'-'+client
-    sg_name = os.environ['environment']+'_'+client+'_sg'
-    task_definition_fam = 'task_definition_'+os.environ['environment']+'_'+client
-    service_name = 'service_'+os.environ['environment']+'_'+client
+
+    # separation of variable names
+    # prod and pre environments
+    if os.environ['environment'] == 'pre':
+        dns = os.environ['environment']+client+'.web.lazzaro.io'
+        log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
+        target_group_name = os.environ['environment']+'-'+client
+        sg_name = os.environ['environment']+'_'+client+'_sg'
+        task_definition_fam = 'task_definition_' + \
+            os.environ['environment']+'_'+client
+        service_name = 'service_'+os.environ['environment']+'_'+client
+    else:
+        dns = client+'.web.lazzaro.io'
+        log_group_name = '/ecs/front/'+client
+        target_group_name = client
+        sg_name = client+'_sg'
+        task_definition_fam = 'task_definition_' + \
+            '_'+client
+        service_name = 'service_'+client
 
     # Init classes
     ecs = ecs_service()
@@ -91,7 +106,7 @@ def handle_service_creation(client, params):
     logger.info("5. Creating Security Group")
     # security group
     sg_id = security.create_security_group(
-        client, port, params['elb']['alb_sg'], params['network']['vpc_id'], sg_name)
+        client, port, params['elb']['alb_sg'], params['network']['vpc_id'], sg_name, tags)
     print(sg_id)
 
     logger.info("6. Creating Task Definition")

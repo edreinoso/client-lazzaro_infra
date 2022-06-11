@@ -11,26 +11,26 @@ sqs_client = boto3.client('sqs')
 
 
 class security_group():
-    def create_security_group(self, client, port, alb_sg, vpc_id, sg_name):
+    def create_security_group(self, client, port, alb_sg, vpc_id, sg_name, tags):
         self.client = client
         self.port = port
         self.alb_sg = alb_sg
         self.vpc_id = vpc_id
         self.sg_name = sg_name
-        sg_id=''
+        self.tags = tags
+        sg_id = ''
 
         try:
             create_sg = sg_client.create_security_group(
                 GroupName=sg_name,
                 Description='security group for client: '+client,
                 VpcId=vpc_id,
-                # this would be great if it worked
-                # TagSpecifications=[
-                #     {
-                #         'ResourceType': 'security-group',
-                #         'Tags': tags
-                #     },
-                # ]
+                TagSpecifications=[
+                    {
+                        'ResourceType': 'security-group',
+                        'Tags': tags
+                    },
+                ]
             )
             sg_id = create_sg['GroupId']
             sg_client.authorize_security_group_ingress(
@@ -61,7 +61,7 @@ class security_group():
                         },
                     ],
                 )
-                print(response) # might have to delete soon
+                print(response)  # might have to delete soon
                 sg_id = response['SecurityGroups'][0]['GroupId']
                 try:
                     sg_client.authorize_security_group_ingress(
@@ -85,10 +85,11 @@ class security_group():
                         logger.warn('Security group rule already exist!')
                     else:
                         raise error
-                logger.warn('Skipping this portion, security group already exist!')
+                logger.warn(
+                    'Skipping this portion, security group already exist!')
             else:
                 raise error
-        
+
         return sg_id
 
     def delete_security_group(self, security_group_id):
@@ -107,12 +108,11 @@ class security_group():
             else:
                 raise error
 
-
         return response
 
     def call_sqs_queue(self, client, sg_id, sqs_url):
         self.client = client
-        self.sg_id = sg_id # there needs to be an exception here to handle empty strings
+        self.sg_id = sg_id  # there needs to be an exception here to handle empty strings
         self.sqs_url = sqs_url
 
         if (sg_id == ""):
