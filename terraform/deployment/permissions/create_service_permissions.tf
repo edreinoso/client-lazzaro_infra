@@ -10,7 +10,7 @@ resource "aws_iam_role" "createservice_permission" {
       Version = "2012-10-17"
       Statement = [
         {
-          Action   = [
+          Action = [
             "logs:CreateLogGroup",
             "logs:PutLogEvents",
             "logs:CreateLogStream"
@@ -38,15 +38,15 @@ resource "aws_iam_role" "createservice_permission" {
       Version = "2012-10-17"
       Statement = [
         {
-          Action   = [
+          Action = [
             "dynamodb:Scan",
             "dynamodb:Query",
             "dynamodb:UpdateItem",
           ]
-          Effect   = "Allow"
+          Effect = "Allow"
           Resource = [
-              "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client",
-              "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client-pre",
+            "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client",
+            "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client-pre",
           ]
         },
       ]
@@ -60,7 +60,7 @@ resource "aws_iam_role" "createservice_permission" {
       Version = "2012-10-17"
       Statement = [
         {
-          Action   = [
+          Action = [
             "elasticloadbalancing:CreateTargetGroup",
             "elasticloadbalancing:DescribeListeners",
             "elasticloadbalancing:DescribeRules",
@@ -72,23 +72,23 @@ resource "aws_iam_role" "createservice_permission" {
         },
         #need to come back and check
         {
-          Action   = [
+          Action = [
             "elasticloadbalancing:CreateListener",
           ]
-          Effect   = "Allow"
+          Effect = "Allow"
           Resource = [
             "arn:aws:elasticloadbalancing:eu-central-1:648410456371:loadbalancer/app/*/*" # warning, hardcoded value
           ]
         },
         {
-          Action   = [
+          Action = [
             "iam:PassRole",
           ]
           Effect   = "Allow"
           Resource = "*"
         },
         {
-          Action   = [
+          Action = [
             "ecs:RegisterTaskDefinition",
             "ecs:CreateService"
           ]
@@ -96,27 +96,28 @@ resource "aws_iam_role" "createservice_permission" {
           Resource = "*"
         },
         {
-          Action   = [
+          Action = [
             "route53:ChangeResourceRecordSets",
           ]
-          Effect   = "Allow"
+          Effect = "Allow"
           Resource = [
             "arn:aws:route53:::hostedzone/Z05961833L2QBW4GTOR3X"
           ]
         },
         {
-          Action   = [
+          Action = [
+            "ec2:CreateTags",
             "ec2:CreateSecurityGroup",
             "ec2:AuthorizeSecurityGroupIngress",
           ]
-          Effect   = "Allow"
+          Effect = "Allow"
           Resource = [
             "arn:aws:ec2:eu-central-1:648410456371:security-group/*",
             "arn:aws:ec2:eu-central-1:648410456371:vpc/*"
           ]
         },
         {
-          Action   = [
+          Action = [
             "ec2:DescribeSecurityGroups",
           ]
           Effect   = "Allow"
@@ -133,7 +134,7 @@ resource "aws_iam_role" "createservice_permission" {
       Version = "2012-10-17"
       Statement = [
         {
-          Action   = [
+          Action = [
             "ssm:GetParametersByPath"
           ]
           Effect   = "Allow"
