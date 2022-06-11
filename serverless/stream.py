@@ -14,6 +14,7 @@ from r53 import update_record
 from adhoc import adhoc_delete
 from params import get_params
 
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -27,7 +28,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     sqs = security_group()
 
     # Local vars
-    
+
     # need to have this condition since the name for the
     # log groups are different
     if (os.environ['environment'] == 'pre'):
@@ -37,7 +38,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
         dns = 'pre'+client+'.web.lazzaro.io'
     else:
         service_name = 'service_'+client
-        s3_key = 'frontend-code-build-service/'+client+'.json'
+        s3_key = 'frontend-code-build-service-prod/'+client+'.json'
         log_group_name = '/ecs/front/'+client
         dns = client+'.web.lazzaro.io'
 
