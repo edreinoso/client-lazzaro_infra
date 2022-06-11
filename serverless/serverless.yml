@@ -55,7 +55,7 @@ functions:
     events:
       - stream:
           arn: ${env:stream_arn}
-          batchSize: 10
+          batchSize: 1
           startingPosition: LATEST
           maximumRetryAttempts: 2
           enabled: false
