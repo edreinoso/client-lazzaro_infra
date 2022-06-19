@@ -16,17 +16,6 @@ from r53 import update_record
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-"""
-image = params['image']+client
-container_name = params['container']+client
-dns = os.environ['environment']+client+'.web.lazzaro.io'
-log_group_name = '/ecs/front/'+os.environ['environment']+'/'+client
-target_group_name = os.environ['environment']+'-'+client
-sg_name = os.environ['environment']+'_'+client+'_sg'
-task_definition_fam = 'task_definition_'+os.environ['environment']+'_'+client
-service_name = 'service_'+os.environ['environment']+'_'+client
-"""
-
 
 def handle_service_creation(client, params):
     # Local vars

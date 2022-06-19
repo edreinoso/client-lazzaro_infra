@@ -5,22 +5,24 @@ import boto3
 ssm_params = boto3.client('ssm')
 
 # Getting the infra parameters from SSM Parameter Store
+
+
 class get_params():
     def handler(self, env):
         self.env = env
-        
+
         params = {}
 
-        ### network
+        # network
         network_request_values = ssm_params.get_parameters_by_path(
             Path='/'+env+'/share/network/')['Parameters']
 
-        network_res={}
+        network_res = {}
         for param in network_request_values:
             key = param['Name'].replace('/'+env+'/share/network/', '')
             network_res[key] = param['Value']
-        
-        ### ecs
+
+        # ecs
         ecs_request_values = ssm_params.get_parameters_by_path(
             Path='/'+env+'/front/services/ecs/')['Parameters']
 
@@ -30,7 +32,7 @@ class get_params():
                 '/'+env+'/front/services/ecs/', '')
             ecs_res[key] = param['Value']
 
-        ### elb
+        # elb
         elb_request_values = ssm_params.get_parameters_by_path(
             Path='/'+env+'/front/services/elb/')['Parameters']
 
