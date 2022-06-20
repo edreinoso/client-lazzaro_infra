@@ -2,4 +2,5 @@
 .env.pre
 .env.prod
 .terraform
+.vscode
 node_modules/
