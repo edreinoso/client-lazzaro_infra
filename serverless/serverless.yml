@@ -66,8 +66,8 @@ functions:
     role: pass
     timeout: 3
     events:
-      # turn on services based on schedule
-      pass
+      - schedule: cron(0 8 * * ? *)
+
   
   ## Turn off Fargate in pre
   turnofffargateservices:
@@ -75,8 +75,7 @@ functions:
     role: pass
     timeout: 3
     events:
-      # turn off services based on schedule
-      pass
+      - schedule: cron(0 23 * * ? *)
   
   ## Test function
   testservice:
