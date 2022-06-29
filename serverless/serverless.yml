@@ -60,6 +60,24 @@ functions:
           maximumRetryAttempts: 2
           enabled: false
 
+  ## Turn on Fargate in pre
+  turnonfargateservices:
+    handler: fargate.handler
+    role: pass
+    timeout: 3
+    events:
+      # turn on services based on schedule
+      pass
+  
+  ## Turn off Fargate in pre
+  turnofffargateservices:
+    handler: fargate.handler
+    role: pass
+    timeout: 3
+    events:
+      # turn off services based on schedule
+      pass
+  
   ## Test function
   testservice:
     handler: testdeploy.handler
