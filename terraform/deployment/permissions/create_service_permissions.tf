@@ -117,6 +117,7 @@ resource "aws_iam_role" "createservice_permission" {
         },
         {
           Action = [
+            "ec2:CreateTags",
             "ec2:DescribeSecurityGroups",
           ]
           Effect   = "Allow"
