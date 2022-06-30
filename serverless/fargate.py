@@ -13,7 +13,7 @@ def handler(event, context):
     # have to check couple of variables.
     # 1. whether eventbridge has events scheduled on gmt ✅
     # 2. 24h should be accounted ✅
-    # 3. invocation would work exactly with the specified logic
+    # 3. invocation would work exactly with the specified logic ✅
 
     if currentTime.strftime('%H:%M:%S') == "8:00:00":
         # turn on services
