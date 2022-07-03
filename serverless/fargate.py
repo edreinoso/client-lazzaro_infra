@@ -15,7 +15,9 @@ def handler(event, context):
     # 2. 24h should be accounted ✅
     # 3. invocation would work exactly with the specified logic ✅
 
-    if currentTime.strftime('%H:%M:%S') == "8:00:00":
+    print(currentTime.strftime('%H:%M'))
+
+    if currentTime.strftime('%H:%M') == "06:00":
         # turn on services
         desireCount = 1
     else:
@@ -25,6 +27,8 @@ def handler(event, context):
     response = ecs.list_services(
         cluster=cluster,
     )
+
+    print(desireCount)
 
     for n in response['serviceArns']:
         ecs.update_service(
