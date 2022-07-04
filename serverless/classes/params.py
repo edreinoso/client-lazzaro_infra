@@ -42,9 +42,16 @@ class get_params():
                 '/'+env+'/front/services/elb/', '')
             elb_res[key] = param['Value']
 
+        # cw_dashboard
+        cw_res = {}
+        dashboard_res = ssm_params.get_parameter(
+            Name=f'/{env}/share/monitor/dashboard',
+        )
+
         # params.append({"network": network_res, "ecs": ecs_res, "elb": elb_res})
         params['network'] = network_res
         params['ecs'] = ecs_res
         params['elb'] = elb_res
+        params['cwd'] = dashboard_res['Parameter']['Value']
 
         return params
