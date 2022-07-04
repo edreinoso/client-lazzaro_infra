@@ -66,8 +66,8 @@ functions:
     role: arn:aws:iam::${env:account_id}:role/frontend-fargate-lambda-service-role-${env:environment}
     timeout: 3
     events:
-      - schedule: cron(0 8 * * ? *)
-      - schedule: cron(0 23 * * ? *)
+      - schedule: cron(0 6 * * ? *)
+      - schedule: cron(0 21 * * ? *)
 
   ## Test function
   testservice:
