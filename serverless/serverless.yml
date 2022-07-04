@@ -60,6 +60,15 @@ functions:
           maximumRetryAttempts: 2
           enabled: false
 
+  ## Turn on/off Fargate in pre
+  managefargateservices:
+    handler: fargate.handler
+    role: arn:aws:iam::${env:account_id}:role/frontend-fargate-lambda-service-role-${env:environment}
+    timeout: 3
+    events:
+      - schedule: cron(0 6 * * ? *)
+      - schedule: cron(0 21 * * ? *)
+
   ## Test function
   testservice:
     handler: testdeploy.handler
