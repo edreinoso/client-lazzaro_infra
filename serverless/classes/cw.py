@@ -14,21 +14,38 @@ class cwd_service():
         """
         pass
     
-    def append_client_compute(self, dhb_name):
+    def append_client_compute(self, client, cluster, dhb_name):
         """
           dashboard overview, all clients
         """
         self.dhb_name = dhb_name
+        self.client = client
+        self.cluster = cluster
         response = cw_client.get_dashboard(
             DashboardName=dhb_name
         )
 
         widgets = json.loads(response['DashboardBody'])
 
+        prevy = widgets['widgets'][len(widgets['widgets'])-1]['y']
+        prevx = widgets['widgets'][len(widgets['widgets'])-1]['x']
+        nowy = 0    
+        nowx = 0    
+
+        if len(widgets['widgets']) < 1:
+            nowy = 0
+            nowx = 0
+        if prevx == 16:
+            nowy = prevy + 3
+            nowx = 0
+        else:
+            nowy = prevy
+            nowx = prevx + 8
+
         new_client_widget = {
             "type":"metric",
-            "x":0,
-            "y":0,
+            "x":nowx,
+            "y":nowy,
             "width":8,
             "height":3,
             "properties":{

@@ -121,7 +121,7 @@ def handle_service_creation(client, params):
 
     # create dashboards
     cwd.create_client_dashboard()
-    cwd.append_client_compute(params['cwd'])
+    cwd.append_client_compute(client, params['ecs']['cluster_name'], params['cwd'])
 
 def handler(event, context):
     # params init
