@@ -69,8 +69,8 @@ class ecs_service():
             requiresCompatibilities=[
                 'FARGATE'
             ],
-            cpu='512',
-            memory='1024',
+            cpu='256',
+            memory='512',
         )
         taskd_arn = task_definition['taskDefinition']['taskDefinitionArn']
         return taskd_arn
