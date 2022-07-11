@@ -27,20 +27,22 @@ class cwd_service():
 
         widgets = json.loads(response['DashboardBody'])
 
-        prevy = widgets['widgets'][len(widgets['widgets'])-1]['y']
-        prevx = widgets['widgets'][len(widgets['widgets'])-1]['x']
         nowy = 0    
         nowx = 0    
 
         if len(widgets['widgets']) < 1:
             nowy = 0
             nowx = 0
-        if prevx == 16:
-            nowy = prevy + 3
-            nowx = 0
         else:
-            nowy = prevy
-            nowx = prevx + 8
+            prevy = widgets['widgets'][len(widgets['widgets'])-1]['y']
+            prevx = widgets['widgets'][len(widgets['widgets'])-1]['x']
+
+            if prevx == 16:
+                nowy = prevy + 3
+                nowx = 0
+            else:
+                nowy = prevy
+                nowx = prevx + 8
 
         new_client_widget = {
             "type":"metric",
