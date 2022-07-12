@@ -11,7 +11,7 @@ from elb import elb_service
 from sg import security_group
 from ddb import update_table, query_table
 from r53 import update_record
-
+from cw import cwd_service
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -43,6 +43,7 @@ def handle_service_creation(client, params):
 
     # Init classes
     ecs = ecs_service()
+    cwd = cwd_service()
     elb = elb_service()
     security = security_group()
     r53 = update_record()
@@ -118,6 +119,9 @@ def handle_service_creation(client, params):
     ddb_update.update_item(client, alb_listener['listener_arn'], alb_listener['rule_arn'],
                            target_arn, taskd_arn, sg_id)
 
+    # create dashboards
+    cwd.create_client_dashboard()
+    cwd.append_client_compute(params['cwd'])
 
 def handler(event, context):
     # params init
