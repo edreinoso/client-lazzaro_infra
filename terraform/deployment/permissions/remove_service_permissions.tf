@@ -9,7 +9,7 @@ resource "aws_iam_role" "removeservice_permission" {
       Version = "2012-10-17"
       Statement = [
         {
-          Action   = [
+          Action = [
             "logs:CreateLogGroup",
             "logs:PutLogEvents",
             "logs:CreateLogStream"
@@ -39,25 +39,25 @@ resource "aws_iam_role" "removeservice_permission" {
       Version = "2012-10-17"
       Statement = [
         {
-          Action   = [
+          Action = [
             "dynamodb:GetRecords",
             "dynamodb:GetShardIterator",
             "dynamodb:DescribeStream"
           ]
-          Effect   = "Allow"
+          Effect = "Allow"
           Resource = [
             "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client/stream/2021-05-06T13:13:45.502",
             "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client-pre/stream/2021-06-14T18:56:04.772"
           ]
         },
         {
-          Action   = [
+          Action = [
             "dynamodb:ListStreams"
           ]
-          Effect   = "Allow"
+          Effect = "Allow"
           Resource = [
-              "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client",
-              "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client-pre"
+            "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client",
+            "arn:aws:dynamodb:eu-central-1:648410456371:table/frontend-ddb-client-pre"
           ]
         },
       ]
@@ -71,16 +71,16 @@ resource "aws_iam_role" "removeservice_permission" {
       Version = "2012-10-17"
       Statement = [
         {
-          Action   = [
+          Action = [
             "logs:DeleteLogGroup"
           ]
-          Effect   = "Allow"
+          Effect = "Allow"
           Resource = [
-              "arn:aws:logs:eu-central-1:648410456371:*"
+            "arn:aws:logs:eu-central-1:648410456371:*"
           ]
         },
         {
-          Action   = [
+          Action = [
             "elasticloadbalancing:DeleteTargetGroup",
             "ecs:DeregisterTaskDefinition",
             "ecs:DeleteService"
@@ -89,7 +89,7 @@ resource "aws_iam_role" "removeservice_permission" {
           Resource = "*"
         },
         {
-          Action   = [
+          Action = [
             "elasticloadbalancing:DeleteListener",
             "elasticloadbalancing:DeleteRule"
           ]
@@ -97,12 +97,12 @@ resource "aws_iam_role" "removeservice_permission" {
           Resource = "*"
         },
         {
-          Action   = [
+          Action = [
             "codebuild:BatchDeleteBuilds",
             "ecr:BatchDeleteImage",
             "s3:DeleteObject"
           ]
-          Effect   = "Allow"
+          Effect = "Allow"
           Resource = [
             "arn:aws:ecr:eu-central-1:648410456371:repository/lazzaro-front-repo",
             "arn:aws:ecr:eu-central-1:648410456371:repository/lazzaro-front-repo-pre",
@@ -111,14 +111,14 @@ resource "aws_iam_role" "removeservice_permission" {
           ]
         },
         {
-          Action   = [
+          Action = [
             "route53:ChangeResourceRecordSets"
           ]
           Effect   = "Allow"
           Resource = "arn:aws:route53:::hostedzone/Z05961833L2QBW4GTOR3X"
         },
         {
-          Action   = [
+          Action = [
             "sqs:SendMessage"
           ]
           Effect   = "Allow"
@@ -135,8 +135,9 @@ resource "aws_iam_role" "removeservice_permission" {
       Version = "2012-10-17"
       Statement = [
         {
-          Action   = [
-            "ssm:GetParametersByPath"
+          Action = [
+            "ssm:GetParametersByPath",
+            "ssm:GetParameter"
           ]
           Effect   = "Allow"
           Resource = "arn:aws:ssm:eu-central-1:648410456371:parameter/*"

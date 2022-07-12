@@ -135,10 +135,30 @@ resource "aws_iam_role" "createservice_permission" {
       Statement = [
         {
           Action = [
-            "ssm:GetParametersByPath"
+            "ssm:GetParametersByPath",
+            "ssm:GetParameter"
           ]
           Effect   = "Allow"
           Resource = "arn:aws:ssm:eu-central-1:648410456371:parameter/*"
+        }
+      ]
+    })
+  }
+
+  # dashboard
+  inline_policy {
+    name = "cwd"
+
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action = [
+            "cloudwatch:GetDashboard",
+            "cloudwatch:PutDashboard"
+          ]
+          Effect   = "Allow"
+          Resource = "arn:aws:cloudwatch::648410456371:dashboard/frontend-clients-dashboards-${terraform.workspace}"
         }
       ]
     })

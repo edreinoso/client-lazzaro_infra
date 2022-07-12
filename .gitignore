@@ -4,3 +4,10 @@
 .terraform
 .vscode
 node_modules/
+*.hcl
+serverless/.serverless/serverless-state.json
+serverless/.serverless/frontend-ecs-services.zip
+serverless/.serverless/cloudformation-template-update-stack.json
+serverless/.serverless/serverless-state.json
+serverless/.serverless/frontend-ecs-services.zip
+serverless/.serverless/cloudformation-template-update-stack.json
