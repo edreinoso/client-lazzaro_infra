@@ -128,16 +128,17 @@ class elb_service():
             number_of_rules['condition'] = True
             return number_of_rules"""
 
-    def create_rule(self, listener_arn, target_arn, dns, s3_bucket):
+    def create_rule(self, listener_arn, target_arn, dns, bucket, kms_key):
         # int(rules['Rules'][len(rules['Rules'])-2]['Priority'])+1)
         self.listener_arn = listener_arn
         self.target_arn = target_arn
         self.dns = dns
-        self.s3_bucket = s3_bucket
+        self.bucket = bucket
+        self.kms_key = kms_key
         object_name = 's3_listener_rules.json'
-        file_name = 'rules.json'
+        file_name = '/tmp/rules.json'
 
-        s3.download_file(s3_bucket, object_name, file_name)
+        s3.download_file(bucket, object_name, file_name)
 
         s3_rules = {}
         priority = 0
@@ -150,7 +151,14 @@ class elb_service():
         with open(file_name, 'w') as f:
             f.write(json.dumps(s3_rules))
 
-        s3.upload_file(file_name, s3_bucket, object_name)
+        s3.upload_file(file_name, bucket, object_name)
+        s3.put_object(
+            Bucket=bucket,
+            Body=file_name,
+            Key=object_name,
+            ServerSideEncryption='aws:kms',
+            SSEKMSKeyId=kms_key,
+        )
 
         listener_rule = elb_client.create_rule(
             ListenerArn=listener_arn,
@@ -181,13 +189,15 @@ class elb_service():
         rule_arn = listener_rule['Rules'][0]['RuleArn']
         return rule_arn
 
-    def create_listener_rule(self, client, alb_arn, certificate, target_arn, tags, dns):
+    def create_listener_rule(self, client, alb_arn, certificate, target_arn, tags, dns, bucket, kms_key):
         self.client = client
         self.alb_arn = alb_arn
         self.certificate = certificate
         self.target_arn = target_arn
         self.tags = tags
         self.dns = dns
+        self.bucket = bucket
+        self.kms_key = kms_key
 
         logger.info("3a. Checking to see if there's a Listener")
         listener_arn = ''
@@ -206,7 +216,7 @@ class elb_service():
             rule_arn = check_rule_arn['arn'] 
         else: # if there is no rule, then create one
             logger.info("3b.I Creating Rule")
-            rule_arn = self.create_rule(listener_arn, target_arn, dns)
+            rule_arn = self.create_rule(listener_arn, target_arn, dn, bucket, kms_key)
 
         alb_listener = {}
         alb_listener['listener_arn'] = listener_arn
