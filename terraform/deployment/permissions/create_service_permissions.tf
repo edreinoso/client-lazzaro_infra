@@ -18,15 +18,6 @@ resource "aws_iam_role" "createservice_permission" {
           Effect   = "Allow"
           Resource = "*"
         },
-        # {
-        #   Action   = [
-        #   ]
-        #   Effect   = "Allow"
-        #   Resource: [
-        #     "arn:aws:logs:eu-central-1:648410456371:log-group:frontend-ecs-services-${terraform.workspace}-createservice:log-stream:*",
-        #     "arn:aws:logs:eu-central-1:648410456371:log-group:frontend-ecs-services-${terraform.workspace}-createservice"
-        #   ]
-        # },
       ]
     })
   }
@@ -123,6 +114,14 @@ resource "aws_iam_role" "createservice_permission" {
           Effect   = "Allow"
           Resource = "*"
         },
+        {
+          Action = [
+            "s3:PutObject",
+            "s3:GetObject"
+          ]
+          Effect   = "Allow"
+          Resource = "arn:aws:s3:::deployment-resources-pre/*"
+        }
       ]
     })
   }
