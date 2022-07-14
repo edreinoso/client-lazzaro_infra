@@ -39,6 +39,23 @@ resource "aws_iam_role" "fargateservice_permission" {
       ]
     })
   }
+  # stop rds instance
+  inline_policy {
+    name = "rds"
+
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action = [
+            "rds:StopDBInstance",
+          ]
+          Effect   = "Allow"
+          Resource = "*"
+        },
+      ]
+    })
+  }
 }
 
 data "aws_iam_policy_document" "trust_lambda_fargate_service_policy" {
