@@ -48,6 +48,7 @@ resource "aws_iam_role" "fargateservice_permission" {
       Statement = [
         {
           Action = [
+            "rds:StartDBInstance",
             "rds:StopDBInstance",
           ]
           Effect   = "Allow"

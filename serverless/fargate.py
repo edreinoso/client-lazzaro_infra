@@ -10,36 +10,42 @@ currentTime = datetime.utcnow()
 
 def handler(event, context):
     cluster = 'lazzaro-front-cluster-pre'
-
+    instance_id = 'treasure-map'
     print(currentTime.strftime('%H:%M'))
 
     if currentTime.strftime('%H:%M') == "06:00":
         # turn on services
-        desireCount = 1
+        desire_count = 1
+        turn_on_rds(instance_id)
     else:
         # turn off services
-        desireCount = 0
+        desire_count = 0
+        turn_off_rds(instance_id)
 
     response = ecs.list_services(
         cluster=cluster,
     )
 
-    print(desireCount)
+    print(desire_count)
 
     for n in response['serviceArns']:
         ecs.update_service(
             cluster=cluster,
             service=n,
-            desiredCount=desireCount,
+            desiredCount=desire_count,
         )
-
-    # stopping RDS instance
-    instance_id = 'treasure-map'
-    rds.stop_db_instance(
-        DBInstanceIdentifier=instance_id,
-    )
 
     return {
         'statusCode': 200,
         'body': json.dumps('ECS savings has been applied')
     }
+
+def turn_on_rds(id):
+    rds.stop_db_instance(
+        DBInstanceIdentifier=id,
+    )
+
+def turn_off_rds(id):
+    rds.start_db_instance(
+        DBInstanceIdentifier=id,
+    )
