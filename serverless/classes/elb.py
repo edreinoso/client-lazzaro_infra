@@ -132,7 +132,7 @@ class elb_service():
         self.dns = dns
         self.bucket = bucket
         self.kms_key = kms_key
-        object_name = 's3_listener_rules.json'
+        object_name = 's3rules.json'
         file_name = '/tmp/rules.json'
 
         print("testing statement: create_rule bucket and kms_key: ", bucket, kms_key)
