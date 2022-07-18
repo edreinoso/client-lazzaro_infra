@@ -141,6 +141,16 @@ resource "aws_iam_role" "createservice_permission" {
           Resource = [
             "*"
           ]
+        },
+        {
+          Action = [
+            "kms:Decrypt",
+            "kms:GenerateDataKey"
+          ]
+          Effect = "Allow"
+          Resource = [
+            "*"
+          ]
         }
       ]
     })
