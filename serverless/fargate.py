@@ -40,12 +40,14 @@ def handler(event, context):
         'body': json.dumps('ECS savings has been applied')
     }
 
-def turn_on_rds(id):
-    rds.stop_db_instance(
-        DBInstanceIdentifier=id,
+def turn_on_rds(rds_id):
+    rds_start = rds.start_db_instance(
+        DBInstanceIdentifier=rds_id,
     )
+    print("turning on rds instance", rds_id, rds_start)
 
-def turn_off_rds(id):
-    rds.start_db_instance(
-        DBInstanceIdentifier=id,
+def turn_off_rds(rds_id):
+    rds_stop = rds.stop_db_instance(
+        DBInstanceIdentifier=rds_id,
     )
+    print("turning on rds instance", rds_id, rds_stop)
