@@ -113,14 +113,34 @@ resource "aws_iam_role" "createservice_permission" {
           ]
           Effect   = "Allow"
           Resource = "*"
-        },
+        }
+      ]
+    })
+  }
+  # s3
+  inline_policy {
+    name = "s3"
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
         {
           Action = [
             "s3:PutObject",
-            "s3:GetObject"
           ]
-          Effect   = "Allow"
-          Resource = "arn:aws:s3:::deployment-resources-pre/*"
+          Effect = "Allow"
+          Resource = [
+            "arn:aws:s3:::deployment-resources-pre/*",
+          ]
+        },
+        {
+          Action = [
+            "s3:GetObject",
+            "s3:ListBucket"
+          ]
+          Effect = "Allow"
+          Resource = [
+            "*"
+          ]
         }
       ]
     })
