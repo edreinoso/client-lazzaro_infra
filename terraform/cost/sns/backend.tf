@@ -3,6 +3,6 @@ terraform {
     bucket         = "terraform-state-lazzaro"
     dynamodb_table = "terraform-state-lock-ddb"
     region         = "eu-central-1"
-    key            = "cost/sns/topic_susbcription.tfstate"
+    key            = "cost/sns/sns.tfstate"
   }
 }
