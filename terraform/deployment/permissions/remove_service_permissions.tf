@@ -17,17 +17,6 @@ resource "aws_iam_role" "removeservice_permission" {
           Effect   = "Allow"
           Resource = "*"
         }
-        # {
-        #   Action   = [
-        #     "logs:PutLogEvents",
-        #     "logs:CreateLogStream"
-        #   ]
-        #   Effect   = "Allow"
-        #   Resource: [
-        #     "arn:aws:logs:eu-central-1:648410456371:log-group:frontend-ecs-services-${terraform.workspace}-removeservice:log-stream:*",
-        #     "arn:aws:logs:eu-central-1:648410456371:log-group:frontend-ecs-services-${terraform.workspace}-removeservice"
-        #   ]
-        # },
       ]
     })
   }
@@ -141,6 +130,31 @@ resource "aws_iam_role" "removeservice_permission" {
           ]
           Effect   = "Allow"
           Resource = "arn:aws:ssm:eu-central-1:648410456371:parameter/*"
+        }
+      ]
+    })
+  }
+  # events
+  inline_policy {
+    name = "events"
+
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action = [
+            "events:PutRule",
+            "events:PutTargets"
+          ]
+          Effect   = "Allow"
+          Resource = ["*"]
+        },
+        {
+          Action = [
+            "lambda:AddPermission",
+          ]
+          Effect   = "Allow"
+          Resource = ["*"] # elb stabilizer lambda arn
         }
       ]
     })

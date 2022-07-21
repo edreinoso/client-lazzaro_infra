@@ -152,8 +152,6 @@ class elb_service():
             f.write(json.dumps(s3_rules))
             f.truncate()
 
-        # s3obj = os.path.join(pathlib.Path(__file__).parent.resolve(), "rules.json")
-
         """ sending file to s3 """
         with open(file_name, "rb") as data:
             print("testing statement: create_rule put object")
