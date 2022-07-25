@@ -2,8 +2,7 @@ data "terraform_remote_state" "ecs_service" {
   backend = "s3"
   config = {
     bucket = "terraform-state-lazzaro"
-    # key    = "env:/${terraform.workspace}/infra_front.tfstate" # pre
-    key    = "infra_front.tfstate" # prod
+    key    = terraform.workspace == "prod" ? "infra_front.tfstate" : "env:/${terraform.workspace}/infra_front.tfstate"
     region = "eu-central-1"
   }
 }
@@ -12,8 +11,7 @@ data "terraform_remote_state" "ecs_role" {
   backend = "s3"
   config = {
     bucket = "terraform-state-lazzaro"
-    # key    = "env:/${terraform.workspace}/permissions_role_ecs_front.tfstate" # pre
-    key    = "permissions_role_ecs_front.tfstate" # prod
+    key    = terraform.workspace == "prod" ? "permissions_role_ecs_front.tfstate" : "env:/${terraform.workspace}/permissions_role_ecs_front.tfstate"
     region = "eu-central-1"
   }
 }
@@ -32,8 +30,7 @@ data "terraform_remote_state" "sqs_queue" {
 resource "aws_ssm_parameter" "repository_name" {
   name  = "/${terraform.workspace}/front/services/ecs/repo_name"
   type  = "String"
-  # value = "lazzaro-front-repo-${terraform.workspace}" # pre
-  value = "lazzaro-front-repo" # prod
+  value = terraform.workspace == "prod" ? "lazzaro-front-repo" : "lazzaro-front-repo-${terraform.workspace}"
 }
 
 ## cluster arn
@@ -66,7 +63,7 @@ resource "aws_ssm_parameter" "role" {
 
 ## queue url
 resource "aws_ssm_parameter" "queue_url" {
-  name = "/${terraform.workspace}/front/services/ecs/queue_url"
+  name  = "/${terraform.workspace}/front/services/ecs/queue_url"
   type  = "String"
   value = data.terraform_remote_state.sqs_queue.outputs.url
 }
