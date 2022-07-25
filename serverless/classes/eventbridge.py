@@ -1,3 +1,4 @@
+import os
 import boto3
 
 events = boto3.client('events')
@@ -17,7 +18,6 @@ class event_bridge():
 
     def put_target(self, client, target_arn):
         self.client = client
-        self.target_id = target_id
         self.target_arn = target_arn
 
         events.put_targets(
@@ -50,7 +50,7 @@ class event_bridge():
         self.action = action
         self.target_arn = target_arn # this should be obtained from serverless output
 
-        put_rule(client, schedule)
-        put_target(client, target_arn)
-        add_lambda_permissions(client, function_name, action)
+        self.put_rule(client, schedule)
+        self.put_target(client, target_arn)
+        self.add_lambda_permissions(client, function_name, action)
         
