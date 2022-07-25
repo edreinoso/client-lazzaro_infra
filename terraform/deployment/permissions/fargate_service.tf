@@ -1,4 +1,5 @@
 resource "aws_iam_role" "fargateservice_permission" {
+  count              = terraform.workspace == "pre" ? 1 : 0
   name               = "frontend-fargate-lambda-service-role-${terraform.workspace}"
   assume_role_policy = data.aws_iam_policy_document.trust_lambda_fargate_service_policy.json
 
