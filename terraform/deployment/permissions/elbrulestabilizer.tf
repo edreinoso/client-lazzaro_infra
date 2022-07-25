@@ -1,5 +1,5 @@
-resource "aws_iam_role" "fargateservice_permission" {
-  name               = "frontend-fargate-lambda-service-role-${terraform.workspace}"
+resource "aws_iam_role" "elbrulestabilizer_permission" {
+  name               = "frontend-elbrulestabilizer-lambda-service-role-${terraform.workspace}"
   assume_role_policy = data.aws_iam_policy_document.trust_lambda_fargate_service_policy.json
 
   # logs
@@ -23,15 +23,14 @@ resource "aws_iam_role" "fargateservice_permission" {
   }
   # update service
   inline_policy {
-    name = "update"
+    name = "elb"
 
     policy = jsonencode({
       Version = "2012-10-17"
       Statement = [
         {
           Action = [
-            "ecs:ListServices",
-            "ecs:UpdateService"
+            "elasticloadbalancing:DescribeListener",
           ]
           Effect   = "Allow"
           Resource = "*"
@@ -41,25 +40,36 @@ resource "aws_iam_role" "fargateservice_permission" {
   }
   # stop rds instance
   inline_policy {
-    name = "rds"
+    name = "s3"
 
     policy = jsonencode({
       Version = "2012-10-17"
       Statement = [
         {
           Action = [
-            "rds:StartDBInstance",
-            "rds:StopDBInstance",
+            "s3:PutObject",
           ]
-          Effect   = "Allow"
-          Resource = "*"
+          Effect = "Allow"
+          Resource = [
+            "arn:aws:s3:::deployment-resources-pre/*",
+          ]
         },
+        {
+          Action = [
+            "kms:Decrypt",
+            "kms:GenerateDataKey"
+          ]
+          Effect = "Allow"
+          Resource = [
+            "*"
+          ]
+        }
       ]
     })
   }
 }
 
-data "aws_iam_policy_document" "trust_lambda_fargate_service_policy" {
+data "aws_iam_policy_document" "trust_lambda_elbrulestabilizer_service_policy" {
   statement {
     actions = ["sts:AssumeRole"]
 

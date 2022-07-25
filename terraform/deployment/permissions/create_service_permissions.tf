@@ -18,15 +18,6 @@ resource "aws_iam_role" "createservice_permission" {
           Effect   = "Allow"
           Resource = "*"
         },
-        # {
-        #   Action   = [
-        #   ]
-        #   Effect   = "Allow"
-        #   Resource: [
-        #     "arn:aws:logs:eu-central-1:648410456371:log-group:frontend-ecs-services-${terraform.workspace}-createservice:log-stream:*",
-        #     "arn:aws:logs:eu-central-1:648410456371:log-group:frontend-ecs-services-${terraform.workspace}-createservice"
-        #   ]
-        # },
       ]
     })
   }
@@ -122,7 +113,45 @@ resource "aws_iam_role" "createservice_permission" {
           ]
           Effect   = "Allow"
           Resource = "*"
+        }
+      ]
+    })
+  }
+  # s3
+  inline_policy {
+    name = "s3"
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action = [
+            "s3:PutObject",
+          ]
+          Effect = "Allow"
+          Resource = [
+            "arn:aws:s3:::deployment-resources-pre/*",
+          ]
         },
+        {
+          Action = [
+            "s3:GetObject",
+            "s3:ListBucket"
+          ]
+          Effect = "Allow"
+          Resource = [
+            "*"
+          ]
+        },
+        {
+          Action = [
+            "kms:Decrypt",
+            "kms:GenerateDataKey"
+          ]
+          Effect = "Allow"
+          Resource = [
+            "*"
+          ]
+        }
       ]
     })
   }

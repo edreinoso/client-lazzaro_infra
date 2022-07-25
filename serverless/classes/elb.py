@@ -2,11 +2,14 @@ import os
 import boto3
 import botocore
 import logging
+import json
+import pathlib
 
 logger = logging.getLogger()
 
 # Global vars: boto3 init
 elb_client = boto3.client('elbv2')
+s3 = boto3.client('s3')
 
 class elb_service():
     def create_target_groups(self, client, port, target_name, vpc_id, alb_arn, tags):
@@ -95,39 +98,72 @@ class elb_service():
         listener_arn = describe_listener_response['Listeners'][0]['ListenerArn']
         return listener_arn
 
-    def check_for_rules(self, listener_arn):
+    def check_for_rules(self, client, listener_arn):
         self.listener_arn = listener_arn
-        number_of_rules = {}
+        if os.environ['environment'] == 'pre':
+            self.client = f"pre{client}"
+        else:
+            self.client = client
+        print("testing statement: check for rules with client: ", client)
+
+        rule = {}
 
         rules = elb_client.describe_rules(
-            # this is gonna have to be dynamic
-            ListenerArn=listener_arn,
+            ListenerArn=listener_arn
         )
-        
-        # there is only one default rule
-        if(len(rules['Rules']) < 2):
-            number_of_rules['number'] = 0
-            number_of_rules['condition'] = False
-            return number_of_rules
-        # there are multiple rules
-        else:
-            number_of_rules['number'] = int(rules['Rules'][len(rules['Rules'])-2]['Priority'])+1
-            number_of_rules['condition'] = True
-            return number_of_rules
 
-    def create_rule(self, listener_arn, target_arn, dns, number_of_rules):
-        # int(rules['Rules'][len(rules['Rules'])-2]['Priority'])+1)
+        for n in rules['Rules']:
+            if len(n['Conditions']) > 0: # checking for conditions in rule
+                print("testing statement: check for rules n['conditions']: ", n['Conditions'][0]['Values'][0])
+                if client+'.web.lazzaro.io' in n['Conditions'][0]['Values'][0]:
+                    rule['arn'] = n['RuleArn']
+                    rule['condition'] = True
+                    print("testing statement: check rules, found condition")
+                    return rule
+        
+        print("testing statement: check rules, after for loop")
+
+        rule['condition'] = False
+        return rule
+        
+    def create_rule(self, listener_arn, target_arn, dns, bucket, kms_key):
         self.listener_arn = listener_arn
         self.target_arn = target_arn
         self.dns = dns
-        self.number_of_rules = number_of_rules
+        self.bucket = bucket
+        self.kms_key = kms_key
+        object_name = 's3rules.json'
+        file_name = '/tmp/rules.json'
 
-        # there are multiple rules
-        if(number_of_rules['condition']):
-            priority = number_of_rules['number']
-        # there is only one default rule
-        else:
-            priority = 1
+        print("testing statement: create_rule bucket and kms_key: ", bucket, kms_key)
+
+        s3.download_file(bucket, object_name, file_name)
+
+        s3_rules = {}
+        priority = 0
+        """ reading, popping and writing """
+        with open(file_name, "r+") as f:
+            lines = f.readline()
+            s3_rules = json.loads(lines)
+            f.seek(0)
+            print("testing statement: create_rule rule to pop",s3_rules['rules'][0])
+            priority = s3_rules['rules'][0]
+            s3_rules['rules'].pop(0)
+            f.write(json.dumps(s3_rules))
+            f.truncate()
+
+        """ sending file to s3 """
+        with open(file_name, "rb") as data:
+            print("testing statement: create_rule put object")
+            s3.put_object(
+                Bucket=bucket,
+                Body=data,
+                Key=object_name,
+                ServerSideEncryption='aws:kms',
+                SSEKMSKeyId=kms_key,
+            )
+
+        print("testing statement: create_rule priority: ", priority)
 
         listener_rule = elb_client.create_rule(
             ListenerArn=listener_arn,
@@ -158,39 +194,36 @@ class elb_service():
         rule_arn = listener_rule['Rules'][0]['RuleArn']
         return rule_arn
 
-    def create_listener_rule(self, alb_arn, certificate, target_arn, tags, dns):
+    def create_listener_rule(self, client, alb_arn, certificate, target_arn, tags, dns, bucket, kms_key):
+        self.client = client
         self.alb_arn = alb_arn
         self.certificate = certificate
         self.target_arn = target_arn
         self.tags = tags
         self.dns = dns
+        self.bucket = bucket
+        self.kms_key = kms_key
 
-        logger.info("3. Checking to see if there's a Listener")
-        is_there_listener = self.check_for_listener(alb_arn)
-
+        logger.info("3a. Checking to see if there's a Listener")
         listener_arn = ''
-        if(is_there_listener):  # if there are listeners, then grab the arn
+        is_there_listener = self.check_for_listener(alb_arn)
+        if(is_there_listener):  # if there is a listener, then grab the arn
             listener_arn = self.get_listener(alb_arn)
-        else:  # if there are no listeners, then create one
-            logger.info("3a. Creating Listener")
+            logger.info("3a.I Yes there is a listener already")
+        else:  # if there are is listener, then create one
+            logger.info("3a.I Creating Listener")
             listener_arn = self.create_listener(
                 alb_arn, certificate, target_arn, tags)
 
-        # need to get the number of listeners
-        # just add one more on top of the latest that
-        # the highest priority
-        number_of_rules = self.check_for_rules(listener_arn)
-
-        print(number_of_rules)
-        logger.info("4. Creating Listener Rule")
-        # elb rule
+        logger.info("3b. Checking if the rule has already been created")
         rule_arn = ''
-        if(number_of_rules['condition']):
-            rule_arn = self.create_rule(
-                listener_arn, target_arn, dns, number_of_rules)
-        else:
-            rule_arn = self.create_rule(
-                listener_arn, target_arn, dns, number_of_rules)
+        check_rule_arn = self.check_for_rules(client, listener_arn)
+        if(check_rule_arn['condition']): # if the rule exist, then grab the arn
+            logger.info("3b.I Yes there is a rule already")
+            rule_arn = check_rule_arn['arn'] 
+        else: # if there is no rule, then create one
+            logger.info("3b.I Creating Rule")
+            rule_arn = self.create_rule(listener_arn, target_arn, dns, bucket, kms_key)
 
         alb_listener = {}
         alb_listener['listener_arn'] = listener_arn

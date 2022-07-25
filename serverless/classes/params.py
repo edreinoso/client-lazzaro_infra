@@ -43,9 +43,18 @@ class get_params():
             elb_res[key] = param['Value']
 
         # cw_dashboard
-        cw_res = {}
         dashboard_res = ssm_params.get_parameter(
             Name=f'/{env}/share/monitor/dashboard',
+        )
+        
+        # s3 bucket
+        bucket_res = ssm_params.get_parameter(
+            Name=f'/{env}/share/storage/s3',
+        )
+        
+        # kms id
+        kms_res = ssm_params.get_parameter(
+            Name=f'/{env}/share/security/kms',
         )
 
         # params.append({"network": network_res, "ecs": ecs_res, "elb": elb_res})
@@ -53,5 +62,7 @@ class get_params():
         params['ecs'] = ecs_res
         params['elb'] = elb_res
         params['cwd'] = dashboard_res['Parameter']['Value']
+        params['bucket'] = bucket_res['Parameter']['Value']
+        params['kms'] = kms_res['Parameter']['Value']
 
         return params

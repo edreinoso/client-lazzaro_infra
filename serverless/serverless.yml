@@ -60,6 +60,12 @@ functions:
           maximumRetryAttempts: 2
           enabled: false
 
+  ## ELB rule stabilizer
+  elbrulestabilize:
+      handler: artifacts.handler
+      role: arn:aws:iam::${env:account_id}:role/frontend-elbrulestabilizer-lambda-service-role-${env:environment}
+      timeout: 20
+
   ## Turn on/off Fargate in pre
   managefargateservices:
     handler: fargate.handler

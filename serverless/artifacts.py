@@ -90,8 +90,7 @@ def handle_service_creation(client, params):
 
     logger.info("3. Creating Listerner/Rules")
     # elb listener and rule
-    alb_listener = elb.create_listener_rule(
-        params['elb']['alb_arn'], params['elb']['certificate_arn'], target_arn, tags, dns)
+    alb_listener = elb.create_listener_rule(client, params['elb']['alb_arn'], params['elb']['certificate_arn'], target_arn, tags, dns, params['bucket'], params['kms'])
 
     logger.info("5. Creating Security Group")
     # security group
