@@ -7,6 +7,7 @@ import logging
 import sys
 sys.path.append("./classes")
 from ecs import ecs_service
+from eventbridge import event_bridge
 from elb import elb_service
 from sg import security_group
 from ddb import update_table, query_table
@@ -26,6 +27,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     r53 = update_record()
     adhoc = adhoc_delete()
     sqs = security_group()
+    event = event_bridge()
 
     # Local vars
 
@@ -87,6 +89,8 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     # sqs queue
     sqs.call_sqs_queue(client, security_group_id, params['ecs']['queue_url'])
 
+    logger.info('11. Stabilize ELB rules')
+    event.stabilize_rules(client, os.environ['elb_lambda'].split(':')[6], 'lambda:InvokeFunction', os.environ['elb_lambda'])
 
 def handler(event, context):
     # params init
