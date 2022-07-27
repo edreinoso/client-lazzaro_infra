@@ -27,8 +27,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     r53 = update_record()
     adhoc = adhoc_delete()
     sqs = security_group()
-    event = event_bridge()
-
+    
     # Local vars
 
     # need to have this condition since the name for the
@@ -43,6 +42,8 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
         s3_key = 'frontend-code-build-service-prod/'+client+'.json'
         log_group_name = '/ecs/front/'+client
         dns = client+'.web.lazzaro.io'
+
+    event = event_bridge(client, os.environ['elb_lambda'].split(':')[6], 'lambda:InvokeFunction', os.environ['elb_lambda'])
 
     logger.info('Handling service deletion')
 
@@ -90,7 +91,7 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     sqs.call_sqs_queue(client, security_group_id, params['ecs']['queue_url'])
 
     logger.info('11. Stabilize ELB rules')
-    event.stabilize_rules(client, os.environ['elb_lambda'].split(':')[6], 'lambda:InvokeFunction', os.environ['elb_lambda'])
+    event.stabilize_rules()
 
 def handler(event, context):
     # params init
