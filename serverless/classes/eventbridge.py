@@ -31,7 +31,7 @@ class event_bridge():
             StatementId=self.client,
             Action=self.action,
             Principal='events.amazonaws.com',
-            SourceArn=f"arn:aws:events:eu-central-1:{os.environ['Account_Number']}:rule/{self.client}",
+            SourceArn=f"arn:aws:events:eu-central-1:{os.environ['account_id']}:rule/{self.client}",
         )
 
     def datetime_to_cron(self, dt):
