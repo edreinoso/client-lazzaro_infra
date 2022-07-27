@@ -129,7 +129,9 @@ resource "aws_iam_role" "createservice_permission" {
           ]
           Effect = "Allow"
           Resource = [
-            "arn:aws:s3:::deployment-resources-pre/*",
+            "arn:aws:s3:::frontend-deployment-resource-management-with-s3/*",
+            # it would be nice if this was dynamic
+            # "arn:aws:s3:::${data.terraform_remote_state.s3_deployment_bucket.outputs.s3_name}/*",
           ]
         },
         {
