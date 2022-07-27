@@ -6,6 +6,7 @@ plugins:
   - serverless-python-requirements
   - serverless-wsgi
   - serverless-dotenv-plugin
+
 custom:
   wsgi:
     app: client.app # app.py and the app variable inside
@@ -22,6 +23,7 @@ provider:
   environment:
     environment: ${env:environment}
     bucket: ${env:bucket}
+    elb_lambda: arn:aws:lambda:${env:region}:${env:account_id}:function:${self:service.name}-${self:provider.stage}-elbrulestabilize
 
 functions:
   ## Client gateway function
@@ -90,5 +92,3 @@ functions:
       - sqs:
           arn: arn:aws:sqs:eu-central-1:${env:account_id}:lazzaro-sqs-service-${env:environment}
           batchSize: 10
-# resources:
-# - ${file(resources/ddb_table.yml)}
