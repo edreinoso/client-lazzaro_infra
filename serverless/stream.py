@@ -27,6 +27,14 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
     r53 = update_record()
     adhoc = adhoc_delete()
     sqs = security_group()
+
+    events_param = {
+        "listener_arn": rule_arn,
+        "bucket": params['bucket'],
+        "kms_key": params['kms']
+    }
+
+    event = event_bridge(client, os.environ['elb_lambda'].split(':')[6], 'lambda:InvokeFunction', os.environ['elb_lambda'], events_param)
     
     # Local vars
 
@@ -42,8 +50,6 @@ def handling_service_deletion(client, rule_arn, target_arn, buildid, taskd_arn, 
         s3_key = 'frontend-code-build-service-prod/'+client+'.json'
         log_group_name = '/ecs/front/'+client
         dns = client+'.web.lazzaro.io'
-
-    event = event_bridge(client, os.environ['elb_lambda'].split(':')[6], 'lambda:InvokeFunction', os.environ['elb_lambda'])
 
     logger.info('Handling service deletion')
 
