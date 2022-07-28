@@ -1,5 +1,6 @@
 import os
 import boto3
+import json
 from datetime import datetime, timedelta
 
 events = boto3.client('events')
@@ -15,12 +16,22 @@ class event_bridge():
         )
 
     def put_target(self):
+        body = {
+            "client": self.client,
+            "listener_arn": self.params['listener_arn'],
+            "bucket": self.params['bucket'],
+            "kms_key": self.params['kms_key'],
+        }
+
+        input_obj = json.dumps(body)
+
         events.put_targets(
             Rule=self.client,
             Targets=[
                 {
                     'Id': self.client,
                     'Arn': self.target_arn,
+                    'Input': input_obj
                 },
             ]
         )
@@ -46,10 +57,10 @@ class event_bridge():
         self.put_rule(schedule)
         self.put_target()
         self.add_lambda_permissions()
-        
 
-    def __init__(self, client, function_name, action, target_arn):
+    def __init__(self, client, function_name, action, target_arn, params):
         self.client = client
         self.function_name = function_name
         self.action = action
         self.target_arn = target_arn
+        self.params = params
