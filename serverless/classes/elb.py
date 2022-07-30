@@ -104,7 +104,6 @@ class elb_service():
             self.client = f"pre{client}"
         else:
             self.client = client
-        print("testing statement: check for rules with client: ", client)
 
         rule = {}
 
@@ -114,14 +113,11 @@ class elb_service():
 
         for n in rules['Rules']:
             if len(n['Conditions']) > 0: # checking for conditions in rule
-                print("testing statement: check for rules n['conditions']: ", n['Conditions'][0]['Values'][0])
                 if client+'.web.lazzaro.io' in n['Conditions'][0]['Values'][0]:
                     rule['arn'] = n['RuleArn']
                     rule['condition'] = True
-                    print("testing statement: check rules, found condition")
                     return rule
         
-        print("testing statement: check rules, after for loop")
 
         rule['condition'] = False
         return rule
@@ -135,7 +131,6 @@ class elb_service():
         object_name = f"/{os.environ['environment']}/s3rules.json"
         file_name = '/tmp/rules.json'
 
-        print("testing statement: create_rule bucket and kms_key: ", bucket, kms_key)
 
         s3.download_file(bucket, object_name, file_name)
 
@@ -146,7 +141,6 @@ class elb_service():
             lines = f.readline()
             s3_rules = json.loads(lines)
             f.seek(0)
-            print("testing statement: create_rule rule to pop",s3_rules['rules'][0])
             priority = s3_rules['rules'][0]
             s3_rules['rules'].pop(0)
             f.write(json.dumps(s3_rules))
@@ -154,7 +148,6 @@ class elb_service():
 
         """ sending file to s3 """
         with open(file_name, "rb") as data:
-            print("testing statement: create_rule put object")
             s3.put_object(
                 Bucket=bucket,
                 Body=data,
@@ -163,7 +156,6 @@ class elb_service():
                 SSEKMSKeyId=kms_key,
             )
 
-        print("testing statement: create_rule priority: ", priority)
 
         listener_rule = elb_client.create_rule(
             ListenerArn=listener_arn,
