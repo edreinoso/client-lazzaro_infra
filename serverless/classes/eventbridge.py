@@ -50,10 +50,10 @@ class event_bridge():
         return f"cron({dt.minute} {dt.hour} {dt.day} {dt.month} ? {dt.year})"
 
     def stabilize_rules(self):
-        current_time = (datetime.now() - timedelta(hours=2)) + timedelta(minutes=5)
-        five_minutes_from_now = current_time + timedelta(minutes=5)
+        five_minutes_from_now = datetime.now() + timedelta(minutes=5)
+
         schedule = self.datetime_to_cron(datetime.strptime(str(five_minutes_from_now.replace(microsecond=0)), "%Y-%m-%d %H:%M:%S"))
-        
+
         self.put_rule(schedule)
         self.put_target()
         self.add_lambda_permissions()
