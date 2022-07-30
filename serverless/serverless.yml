@@ -18,12 +18,11 @@ provider:
   name: aws
   runtime: python3.6
   stage: dev
-  # stage: ${env:environment}
   region: eu-central-1
   environment:
     environment: ${env:environment}
     bucket: ${env:bucket}
-    elb_lambda: arn:aws:lambda:${env:region}:${env:account_id}:function:${self:service.name}-${self:provider.stage}-elbrulestabilize
+    elb_lambda: arn:aws:lambda:${env:region}:${env:account_id}:function:${self:service.name}-${env:environment}-elbrulestabilize
 
 functions:
   ## Client gateway function
@@ -64,7 +63,7 @@ functions:
 
   ## ELB rule stabilizer
   elbrulestabilize:
-      handler: artifacts.handler
+      handler: elbrulestabilize.handler
       role: arn:aws:iam::${env:account_id}:role/frontend-elbrulestabilizer-lambda-service-role-${env:environment}
       timeout: 20
 
