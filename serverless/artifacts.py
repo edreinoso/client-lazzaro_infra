@@ -37,8 +37,7 @@ def handle_service_creation(client, params):
         log_group_name = '/ecs/front/'+client
         target_group_name = client
         sg_name = client+'_sg'
-        task_definition_fam = 'task_definition_' + \
-            '_'+client
+        task_definition_fam = f'task_definition_{client}'
         service_name = 'service_'+client
 
     # Init classes
