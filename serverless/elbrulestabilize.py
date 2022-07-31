@@ -17,7 +17,7 @@ The purpose is to stabilize the priority rules
 elb = boto3.client('elbv2')
 s3 = boto3.client('s3')
 lambda_function = boto3.client('lambda')
-events = boto3.client('event')
+events = boto3.client('events')
 
 def handle_stabilize_rules(listener_arn, bucket, kms_key):
     object_name = f"/{os.environ['environment']}/s3rules.json"
