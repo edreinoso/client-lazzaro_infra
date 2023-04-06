@@ -15,7 +15,7 @@ variable "region" {
 
 variable "location" {
   type    = string
-  default = "https://github.com/IvanSaiz/lazzaro-base-api"
+  default = "https://github.com/Lazzaro-Social-Impact/boutique-api"
 }
 
 variable "username" {
