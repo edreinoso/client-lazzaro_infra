@@ -2,16 +2,16 @@
 
 module "elb" {
   source         = "github.com/edreinoso/terraform_infrastructure_as_code/modules/compute/load-balancer/elb"
-  elb-name       = "lazzaro-back-alb-${terraform.workspace}"
+  elb_name       = "lazzaro-back-alb-${terraform.workspace}"
   # elb-name       = "lb-${var.name}"
-  internal-elb   = var.internal-elb
-  elb-type       = var.elb-type
-  security-group = split(",", aws_security_group.elb-security-group.id)
-  subnet-ids = [
+  internal_elb   = var.internal-elb
+  elb_type       = var.elb-type
+  security_group = split(",", aws_security_group.elb-security-group.id)
+  subnet_ids = [
     element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-a, 0),0,),
     element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 0),0,)
   ]
-  bucket-name = "${var.bucket-name}-${terraform.workspace}"
+  bucket_name = "${var.bucket-name}-${terraform.workspace}"
   # bucket-name = var.bucket-name
   tags = {
     Name          = "lazzaro-back-alb-${terraform.workspace}"
@@ -24,13 +24,13 @@ module "elb" {
 
 module "target-group" {
   source = "github.com/edreinoso/terraform_infrastructure_as_code/modules/compute/load-balancer/tg"
-  vpc-id         = element(data.terraform_remote_state.network.outputs.vpc-id, 1)
-  elb-tg-name    = "${var.elb-tg-name}-${terraform.workspace}"
+  vpc_id         = element(data.terraform_remote_state.network.outputs.vpc-id, 1)
+  elb_tg_name    = "${var.elb-tg-name}-${terraform.workspace}"
   # elb-tg-name    = "tg-${var.name}"
-  tg-port        = var.tg-port
+  tg_port        = var.tg-port
   deregistration = var.tg-deregister
-  tg-target-type = var.tg-target-type
-  tg-protocol    = "HTTP" # TCP
+  tg_target_type = var.tg-target-type
+  tg_protocol    = "HTTP" # TCP
   path           = var.path # this is for the health checks
 
   tags = {
@@ -44,12 +44,12 @@ module "target-group" {
 
 module "listener" {
  source            = "github.com/edreinoso/terraform_infrastructure_as_code/modules/compute/load-balancer/listener"
- elb-arn           = module.elb.elb-arn
- target-group-arn  = module.target-group.target-arn
- listener-port     = "8080"
- ssl-policy        = "ELBSecurityPolicy-2016-08"
- listener-protocol = "HTTPS"
- certificate-arn   = "arn:aws:acm:eu-central-1:648410456371:certificate/92887f51-ea40-418f-bd00-c6da4d3ec36d"
+ elb_arn           = module.elb.elb-arn
+ target_group_arn  = module.target-group.target-arn
+ listener_port     = "8080"
+ ssl_policy        = "ELBSecurityPolicy-2016-08"
+ listener_protocol = "HTTPS"
+ certificate_arn   = "arn:aws:acm:eu-central-1:648410456371:certificate/92887f51-ea40-418f-bd00-c6da4d3ec36d"
 }
 
 resource "aws_s3_bucket" "s3" {
