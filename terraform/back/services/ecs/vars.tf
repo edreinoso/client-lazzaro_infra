@@ -21,6 +21,7 @@
     default = {
       prod = "arn:aws:ecs:eu-central-1:648410456371:cluster/lazzaro-back-cluster-prod"
       pre = "arn:aws:ecs:eu-central-1:648410456371:cluster/lazzaro-back-cluster-pre"
+      nfts-pre = "arn:aws:ecs:eu-central-1:648410456371:cluster/lazzaro-back-cluster-nfts-pre"
     }
   }
   
@@ -46,6 +47,7 @@
     type = map
     default = {
       prod = true
+      pre = false
       pre = false
     }
   }

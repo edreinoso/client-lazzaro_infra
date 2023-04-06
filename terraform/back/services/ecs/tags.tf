@@ -25,5 +25,5 @@ variable "purpose" {
 
 variable "created-on" {
   type    = string
-  default = "5_February_2021"
+  default = "6_April_2023"
 }
