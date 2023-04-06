@@ -78,5 +78,6 @@
       prod = ""
       pre = "pre"
       test = "test"
+      nfts-pre = "nfts-pre"
     }
   }
