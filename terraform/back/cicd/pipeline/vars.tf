@@ -28,6 +28,7 @@ variable "branch" {
   default = {
     prod = "prod"
     pre = "pre"
+    nfts-pre = "nfts-pre"
   }
 }
 
