@@ -1,9 +1,7 @@
 ## V1 = 3000
 ## V2 = 8080
 
-# # The main service.
 resource "aws_ecs_service" "ecs_service" {
-#  name            = "service-${terraform.workspace}-${var.name}"
  name            = "lazzaro-back-service-${terraform.workspace}"
  task_definition = aws_ecs_task_definition.ecs_task_definition.arn
  cluster         = lookup(var.cluster_id, terraform.workspace)
@@ -24,12 +22,11 @@ resource "aws_ecs_service" "ecs_service" {
 
  network_configuration {
    # need to test with Ivan in order to change
-   #  assign_public_ip = true # this needs to change accordingly as well
-   assign_public_ip = lookup(var.pub-ip, terraform.workspace) # this needs to change accordingly as well
+   assign_public_ip = lookup(var.pub-ip, terraform.workspace)
 
    security_groups = split(",", aws_security_group.fargate-security-group.id)
 
-   # these are going to have to be static while there is no backend set up
+   # you are going to have to change to public subnets if deploying in production
    subnets = [
     #  element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-a, 0), 0),
     #  element(element(data.terraform_remote_state.network.outputs.pub-subnet-id-b, 0), 0)
@@ -37,23 +34,9 @@ resource "aws_ecs_service" "ecs_service" {
      element(element(data.terraform_remote_state.network.outputs.pri-subnet-id-a, 1),0,)
    ]
  }
-
-#  depends_on = [
-#    module.elb.elb-arn
-#  ]
- # tags = {
- #   Name          = "ecs_ecs_service"
- #   Template      = "ecs_"
- #   Environment   = "${terraform.workspace}"
- #   Application   = ""
- #   Purpose       = "ECS service to hold the tasks from the application layer"
- #   Creation_Date = "October_13_2020"
- # }
 }
 
-# # The task definition.
 resource "aws_ecs_task_definition" "ecs_task_definition" {
-#  family = "task-definition-${var.name}"
  family = "lazzaro-back-tsk-${terraform.workspace}"
 
  container_definitions = <<EOF

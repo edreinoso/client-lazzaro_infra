@@ -1,6 +1,5 @@
-
-This is the role under which ECS will execute our task. This role becomes more important
-as we add integrations with other AWS services later on.
+# This is the role under which ECS will execute our task. This role becomes more important
+# as we add integrations with other AWS services later on.
 
 # The assume_role_policy field works with the following aws_iam_policy_document to allow
 # ECS tasks to assume this role we're creating.
