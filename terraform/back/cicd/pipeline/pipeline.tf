@@ -32,10 +32,10 @@ resource "aws_codebuild_project" "ecs_containers_build" {
       name  = "username"
       value = var.username
     }
-    # environment_variable {
-    #   name  = "environment"
-    #   value = "#{SourceVariables.BranchName}"
-    # }
+    environment_variable {
+      name  = "environment"
+      value = "#{SourceVariables.BranchName}"
+    }
   }
 
   source {              # required
@@ -65,6 +65,11 @@ resource "aws_codebuild_project" "ecs_containers_build" {
   }
 }
 
+resource "aws_codestarconnections_connection" "codestar_connection" {
+  name          = "${lookup(var.codestarconnection, terraform.workspace)}"
+  provider_type = "GitHub"
+}
+
 resource "aws_codepipeline" "ecs_container_pipeline" {
   name     = "lazzaro-back-pipeline-${terraform.workspace}"
   role_arn = data.terraform_remote_state.cicd_permissions.outputs.code_pipeline_role_arn
@@ -87,11 +92,17 @@ resource "aws_codepipeline" "ecs_container_pipeline" {
       version          = "1"
       output_artifacts = ["backend_${terraform.workspace}_source_output"]
       configuration = {
-        ConnectionArn    = "arn:aws:codestar-connections:us-east-1:648410456371:connection/dc980cdf-217c-4b16-9361-21001850438d"
-        FullRepositoryId = "IvanSaiz/lazzaro-base-api"
+        # this is where the problem lays
+        # then the question becomes, what can I do to change this?
+        # 1) check codestar on the console
+        # 2) use cli to check codestar
+        # 3) create a codestar connection with terraform
+        # codestar connection needs to be dynamic
+        ConnectionArn    = "arn:aws:codestar-connections:eu-central-1:648410456371:connection/664d6f12-ffd6-40aa-ac43-f3f64081be21"
+        FullRepositoryId = "${lookup(var.repository-name, terraform.workspace)}"
         BranchName       = "${lookup(var.branch, terraform.workspace)}"
+        "OutputArtifactFormat" = "CODE_ZIP"
         # BranchName       = "master"
-        # "OutputArtifactFormat" = "CODE_ZIP"
       }
     }
   }
@@ -113,7 +124,9 @@ resource "aws_codepipeline" "ecs_container_pipeline" {
 
       configuration = {
         ProjectName         = "lazzaro-back-build-${terraform.workspace}"
-        EnvironmentVariables = "[{\"name\":\"environment\",\"value\":\"#{${var.source_namespace}.BranchName}\",\"type\":\"PLAINTEXT\"}]"
+        # this needs to be changed depending on the environment
+        EnvironmentVariables = "[{\"name\":\"environment\",\"value\":\"pre\",\"type\":\"PLAINTEXT\"}]"
+        # EnvironmentVariables = "[{\"name\":\"environment\",\"value\":\"#{${var.source_namespace}.BranchName}\",\"type\":\"PLAINTEXT\"}]"
       }
     }
   }
