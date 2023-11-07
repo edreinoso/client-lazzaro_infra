@@ -15,7 +15,7 @@ variable "region" {
 
 variable "location" {
   type    = string
-  default = "https://github.com/Lazzaro-Social-Impact/boutique-api"
+  default = "https://github.com/Lazzaro-Social-Impact/lazzaro-entrepeneurs-api"
 }
 
 variable "username" {
@@ -24,15 +24,36 @@ variable "username" {
 }
 
 variable "branch" {
-  type = map
+  type = map(any)
   default = {
-    prod = "prod"
-    pre = "pre"
-    nfts-pre = "nfts-pre"
+    prod               = "prod"
+    pre                = "pre"
+    entrepreneurs-pre  = "main"
+    entrepreneurs-prod = "prod"
+  }
+}
+
+variable "codestarconnection" {
+  type = map(any)
+  default = {
+    prod               = "prod"
+    pre                = "pre"
+    entrepreneurs-pre  = "entrepreneurs-pre-connection"
+    entrepreneurs-prod = "entrepreneurs-prod-connection"
   }
 }
 
 variable "source_namespace" {
-  type = string
+  type    = string
   default = "SourceVariable"
+}
+
+variable "repository-name" {
+  type = map(any)
+  default = {
+    prod               = "IvanSaiz/lazzaro-base-api"
+    pre                = "IvanSaiz/lazzaro-base-api"
+    entrepreneurs-pre  = "Lazzaro-Social-Impact/lazzaro-entrepreneurs-api"
+    entrepreneurs-prod = "Lazzaro-Social-Impact/lazzaro-entrepreneurs-api"
+  }
 }

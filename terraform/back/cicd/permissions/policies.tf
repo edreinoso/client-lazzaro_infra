@@ -10,7 +10,6 @@ data "terraform_remote_state" "ecr_arn" {
 
 resource "aws_s3_bucket" "ecs-s3-pipeline" {
   bucket        = "lazzaro-back-s3-pipeline-artifacts-${terraform.workspace}"
-  acl           = "private"
   force_destroy = true
 }
 
